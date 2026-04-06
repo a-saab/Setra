@@ -1,0 +1,48 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function ownsUser(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    match /users/{userId} {
+      allow read, write: if ownsUser(userId);
+
+      match /settings/{documentId} {
+        allow read, write: if ownsUser(userId);
+      }
+
+      match /weeklySchedules/{scheduleId} {
+        allow read, write: if ownsUser(userId);
+      }
+
+      match /workoutTemplates/{templateId} {
+        allow read, write: if ownsUser(userId);
+      }
+
+      match /customExercises/{exerciseId} {
+        allow read, write: if ownsUser(userId);
+      }
+
+      match /workoutSessions/{sessionId} {
+        allow read, write: if ownsUser(userId);
+      }
+
+      match /bodyweightLogs/{logId} {
+        allow read, write: if ownsUser(userId);
+      }
+
+      match /personalRecords/{recordId} {
+        allow read, write: if ownsUser(userId);
+      }
+
+      match /meta/{metaId} {
+        allow read, write: if ownsUser(userId);
+      }
+    }
+  }
+}

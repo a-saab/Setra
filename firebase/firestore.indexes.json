@@ -1,0 +1,29 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "workoutSessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "startedAt", "order": "DESCENDING" },
+        { "fieldPath": "state", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "customExercises",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "canonicalName", "order": "ASCENDING" },
+        { "fieldPath": "primaryMuscle", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "personalRecords",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "date", "order": "DESCENDING" },
+        { "fieldPath": "exerciseID", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
