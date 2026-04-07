@@ -66,7 +66,7 @@ struct DayDetailView: View {
                     Button("Save as Template") { saveTemplate() }
 
                     Menu("Copy to Day") {
-                        ForEach(Weekday.allCases.filter { $0 != draft.weekday }) { weekday in
+                        ForEach(copyTargets) { weekday in
                             Button(weekday.title) {
                                 copy(to: weekday)
                             }
@@ -108,6 +108,13 @@ struct DayDetailView: View {
         .onDisappear {
             save()
         }
+    }
+
+    private var copyTargets: [Weekday] {
+        let ordered = workspaceStore.workspace.map { workspace in
+            Weekday.ordered(startingAt: workspace.settings.firstWeekday)
+        } ?? Weekday.allCases
+        return ordered.filter { $0 != draft.weekday }
     }
 
     private func save() {

@@ -1,7 +1,7 @@
 import Foundation
 
 enum SeedData {
-    static let exerciseLibrary: [Exercise] = [
+    nonisolated static let exerciseLibrary: [Exercise] = [
         exercise("barbell-back-squat", "Barbell Back Squat", aliases: ["squat", "back squat"], primary: .quads, secondary: [.glutes, .hamstrings], equipment: .barbell, pattern: .squat, type: .barbell, reps: RepRange(lowerBound: 5, upperBound: 8), sets: 4, rest: 180, notes: "Brace hard and keep the bar stacked over mid-foot.", keywords: ["legs", "compound"], progression: .lowerBodyDefault),
         exercise("romanian-deadlift", "Romanian Deadlift", aliases: ["rdl"], primary: .hamstrings, secondary: [.glutes, .back], equipment: .barbell, pattern: .hinge, type: .barbell, reps: RepRange(lowerBound: 6, upperBound: 10), sets: 3, rest: 150, notes: "Push hips back and keep lats engaged.", keywords: ["posterior chain"], progression: .lowerBodyDefault),
         exercise("leg-press", "Leg Press", aliases: ["sled press"], primary: .quads, secondary: [.glutes], equipment: .machine, pattern: .squat, type: .machine, reps: RepRange(lowerBound: 10, upperBound: 15), sets: 3, rest: 120, notes: "Control the eccentric and avoid lifting hips.", keywords: ["machine legs"], progression: .lowerBodyDefault),
@@ -30,7 +30,7 @@ enum SeedData {
         exercise("plank", "Weighted Plank", aliases: ["plank"], primary: .core, secondary: [.abs], equipment: .bodyweight, pattern: .core, type: .bodyweight, reps: RepRange(lowerBound: 30, upperBound: 60), sets: 3, rest: 45, notes: "Brace hard and avoid drifting into extension.", keywords: ["stability"], progression: .upperBodyDefault),
     ]
 
-    static func defaultWeeklySchedule(unit: WeightUnit) -> WeeklySchedule {
+    nonisolated static func defaultWeeklySchedule(unit: WeightUnit) -> WeeklySchedule {
         WeeklySchedule(
             id: UUID().uuidString,
             title: "Setra Default Split",
@@ -103,7 +103,7 @@ enum SeedData {
         )
     }
 
-    static func recentSessions(unit: WeightUnit) -> [WorkoutSession] {
+    nonisolated static func recentSessions(unit: WeightUnit) -> [WorkoutSession] {
         [
             WorkoutSession(
                 id: UUID().uuidString,
@@ -156,7 +156,7 @@ enum SeedData {
         ]
     }
 
-    static func bodyweightLogs(unit: WeightUnit) -> [BodyweightLog] {
+    nonisolated static func bodyweightLogs(unit: WeightUnit) -> [BodyweightLog] {
         (0..<8).map { index in
             BodyweightLog(
                 id: UUID().uuidString,
@@ -168,7 +168,7 @@ enum SeedData {
         }
     }
 
-    private static func exercise(
+    private nonisolated static func exercise(
         _ id: String,
         _ name: String,
         aliases: [String],
@@ -207,11 +207,11 @@ enum SeedData {
         )
     }
 
-    private static func find(_ id: String) -> Exercise {
+    private nonisolated static func find(_ id: String) -> Exercise {
         exerciseLibrary.first { $0.id == id }!
     }
 
-    private static func logged(_ exerciseID: String, unit: WeightUnit, weight: Double, reps: [Int]) -> LoggedExercise {
+    private nonisolated static func logged(_ exerciseID: String, unit: WeightUnit, weight: Double, reps: [Int]) -> LoggedExercise {
         LoggedExercise(
             id: UUID().uuidString,
             plannedExerciseID: nil,

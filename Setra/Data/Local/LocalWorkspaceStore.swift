@@ -12,7 +12,7 @@ actor LocalWorkspaceStore {
     func loadWorkspace(for user: AuthUser) throws -> UserWorkspace {
         let url = fileURL(for: user)
         guard FileManager.default.fileExists(atPath: url.path) else {
-            return UserWorkspace.seeded(for: user)
+            return UserWorkspace.empty(for: user)
         }
         let data = try Data(contentsOf: url)
         return try decoder.decode(UserWorkspace.self, from: data)

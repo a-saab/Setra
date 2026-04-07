@@ -7,7 +7,7 @@ struct WorkoutSessionView: View {
 
     @State var session: WorkoutSession
     @State private var selectedSet: SetSelection?
-    @State private var restRemaining: Int = 0
+    @State private var restRemaining = 0
     @State private var timerTask: Task<Void, Never>?
 
     var body: some View {
@@ -31,9 +31,10 @@ struct WorkoutSessionView: View {
                 }
 
                 ForEach($session.exercises) { $exercise in
+                    let currentExercise = workspaceStore.exercise(by: exercise.exerciseID)
                     Section {
                         VStack(alignment: .leading, spacing: 14) {
-                            Text(workspaceStore.exercise(by: exercise.exerciseID)?.canonicalName ?? "Exercise")
+                            Text(currentExercise?.canonicalName ?? "Exercise")
                                 .font(.headline)
                                 .foregroundStyle(.white)
                             Text("\(exercise.targetSets) × \(exercise.targetRepRange.title)")
@@ -56,9 +57,14 @@ struct WorkoutSessionView: View {
                                 SetEntryRow(
                                     index: index + 1,
                                     set: $exercise.workingSets[index],
+                                    exercise: currentExercise,
                                     unit: session.unit,
                                     onPickWeight: {
-                                        selectedSet = SetSelection(exerciseIndex: exercise.order, setIndex: index)
+                                        selectedSet = SetSelection(
+                                            exerciseIndex: exercise.order,
+                                            setIndex: index,
+                                            exerciseID: exercise.exerciseID
+                                        )
                                     }
                                 )
                             }
@@ -84,11 +90,12 @@ struct WorkoutSessionView: View {
                     Button("Close") { dismiss() }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Finish") { finish() }
+                    Button("Finish", action: finish)
                 }
             }
             .sheet(item: $selectedSet) { selection in
                 WeightPickerSheet(
+                    exercise: workspaceStore.exercise(by: selection.exerciseID),
                     unit: session.unit,
                     initialWeight: session.exercises[selection.exerciseIndex].workingSets[selection.setIndex].load,
                     settings: workspaceStore.workspace?.settings ?? .default
@@ -133,11 +140,13 @@ private struct SetSelection: Identifiable {
     let id = UUID()
     var exerciseIndex: Int
     var setIndex: Int
+    var exerciseID: String
 }
 
 private struct SetEntryRow: View {
     let index: Int
     @Binding var set: SetLog
+    let exercise: Exercise?
     let unit: WeightUnit
     let onPickWeight: () -> Void
 
@@ -149,10 +158,8 @@ private struct SetEntryRow: View {
                 .frame(width: 28, height: 28)
                 .background(Circle().fill(Color.white.opacity(0.08)))
 
-            Button {
-                onPickWeight()
-            } label: {
-                Text(set.load.map { "\($0.clean) \(unit.shortLabel)" } ?? "Add load")
+            Button(action: onPickWeight) {
+                Text(loadLabel)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 12)
@@ -177,65 +184,108 @@ private struct SetEntryRow: View {
             .labelsHidden()
         }
     }
+
+    private var loadLabel: String {
+        guard let load = set.load else { return exercise?.exerciseType == .barbell ? "Set barbell load" : "Add load" }
+        if exercise?.exerciseType == .barbell {
+            return "\(load.clean) \(unit.shortLabel) total"
+        }
+        return "\(load.clean) \(unit.shortLabel)"
+    }
 }
 
 private struct WeightPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
 
+    let exercise: Exercise?
     let unit: WeightUnit
     let initialWeight: Double?
     let settings: AppSettings
     let onSave: (Double) -> Void
 
-    @State private var text: String = ""
+    @State private var text = ""
+    private let parser = BarbellLoadParser()
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    TextField("Weight", text: $text)
+                    TextField(placeholderText, text: $text)
                         .keyboardType(.decimalPad)
                         .authField()
 
-                    if let desiredWeight = Double(text), desiredWeight > 0 {
-                        let result = PlateCalculator().calculate(targetWeight: desiredWeight, settings: settings)
+                    if let parsedBarbellLoad {
+                        GlassCard {
+                            VStack(alignment: .leading, spacing: 10) {
+                                SectionHeader("Resolved Load", subtitle: parsedBarbellLoad.summary)
+                                Text("\(parsedBarbellLoad.totalWeight.clean) \(unit.shortLabel) total")
+                                    .font(.headline)
+                                    .foregroundStyle(.white)
+                                Text("Bar: \(parsedBarbellLoad.barWeight.clean) \(unit.shortLabel) • Side: \(parsedBarbellLoad.perSideWeight.clean) \(unit.shortLabel)")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        let result = PlateCalculator().calculate(targetWeight: parsedBarbellLoad.totalWeight, settings: settings)
                         GlassCard {
                             VStack(alignment: .leading, spacing: 10) {
                                 SectionHeader("Plate Builder", subtitle: result.isAchievable ? "Per side distribution" : "Closest available stack")
-                                Text("\(result.totalWeight.clean) \(unit.shortLabel) total")
-                                    .font(.headline)
-                                    .foregroundStyle(.white)
-                                Text("Bar: \(result.barWeight.clean) \(unit.shortLabel)")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
                                 Text(result.platesPerSide.map(\.displayWeight).joined(separator: " • "))
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
+                            }
+                        }
+                    } else if let resolvedWeight {
+                        GlassCard {
+                            VStack(alignment: .leading, spacing: 10) {
+                                SectionHeader("Resolved Load")
+                                Text("\(resolvedWeight.clean) \(unit.shortLabel)")
+                                    .font(.headline)
+                                    .foregroundStyle(.white)
                             }
                         }
                     }
                 }
                 .padding(20)
             }
+            .scrollIndicators(.hidden)
             .background(SetraTheme.screenBackground.ignoresSafeArea())
-            .navigationTitle("Pick Load")
+            .navigationTitle(exercise?.exerciseType == .barbell ? "Set Barbell Load" : "Pick Load")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Save") {
-                        if let newWeight = Double(text) {
-                            onSave(newWeight)
-                        }
+                        guard let resolvedWeight else { return }
+                        onSave(resolvedWeight)
                         dismiss()
                     }
+                    .disabled(resolvedWeight == nil)
                 }
             }
             .onAppear {
                 text = initialWeight?.clean ?? ""
             }
         }
+    }
+
+    private var placeholderText: String {
+        guard exercise?.exerciseType == .barbell else { return "Weight" }
+        return settings.preferredBarbellEntryMode.subtitle
+    }
+
+    private var parsedBarbellLoad: ParsedBarbellLoad? {
+        guard exercise?.exerciseType == .barbell else { return nil }
+        return parser.parse(text: text, settings: settings)
+    }
+
+    private var resolvedWeight: Double? {
+        if let parsedBarbellLoad {
+            return parsedBarbellLoad.totalWeight
+        }
+        return Double(text)
     }
 }
 

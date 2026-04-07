@@ -53,18 +53,21 @@ private struct BodyweightLogView: View {
             Section("Log Today") {
                 TextField("Bodyweight", text: $value)
                     .keyboardType(.decimalPad)
-                Button("Save Entry") {
-                    save()
-                }
+                Button("Save Entry", action: save)
             }
 
             Section("Recent Entries") {
-                ForEach(workspaceStore.workspace?.bodyweightLogs ?? []) { log in
-                    HStack {
-                        Text(log.date.formatted(.dateTime.month().day()))
-                        Spacer()
-                        Text("\(log.weight.clean) \(log.unit.shortLabel)")
+                if let logs = workspaceStore.workspace?.bodyweightLogs, !logs.isEmpty {
+                    ForEach(logs) { log in
+                        HStack {
+                            Text(log.date.formatted(.dateTime.month().day()))
+                            Spacer()
+                            Text("\(log.weight.clean) \(log.unit.shortLabel)")
+                        }
                     }
+                } else {
+                    Text("No bodyweight entries yet.")
+                        .foregroundStyle(.secondary)
                 }
             }
         }
@@ -89,13 +92,44 @@ private struct SettingsView: View {
 
     var body: some View {
         Form {
+            Section("Weekly Planning") {
+                Picker("Week Starts", selection: $settings.firstWeekday) {
+                    ForEach(Weekday.allCases) { day in
+                        Text(day.title).tag(day)
+                    }
+                }
+            }
+
             Section("Units") {
                 Picker("Weight Unit", selection: $settings.weightUnit) {
                     ForEach(WeightUnit.allCases) { unit in
                         Text(unit.displayName).tag(unit)
                     }
                 }
-                Stepper("Barbell: \(settings.defaultBarbellWeight.clean) \(settings.weightUnit.shortLabel)", value: $settings.defaultBarbellWeight, in: 15...100, step: settings.weightUnit == .pounds ? 5 : 2.5)
+                .onChange(of: settings.weightUnit) { _, _ in
+                    settings.applyWeightUnitDefaults()
+                }
+            }
+
+            Section("Barbell Entry") {
+                Stepper(
+                    "Barbell: \(settings.defaultBarbellWeight.clean) \(settings.weightUnit.shortLabel)",
+                    value: $settings.defaultBarbellWeight,
+                    in: settings.weightUnit == .pounds ? 15...70 : 10...30,
+                    step: settings.weightUnit == .pounds ? 5 : 2.5
+                )
+
+                Picker("Preferred Input", selection: $settings.preferredBarbellEntryMode) {
+                    ForEach(BarbellEntryMode.allCases) { mode in
+                        VStack(alignment: .leading) {
+                            Text(mode.title).tag(mode)
+                        }
+                    }
+                }
+
+                Text(settings.preferredBarbellEntryMode.subtitle)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
 
             Section("Progression") {
@@ -117,7 +151,7 @@ private struct SettingsView: View {
         .navigationTitle("Settings")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button("Save") { save() }
+                Button("Save", action: save)
             }
         }
         .onAppear {

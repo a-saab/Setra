@@ -13,7 +13,7 @@ struct CompositeWorkspaceRepository: WorkspaceRepository {
         async let local = localStore.loadWorkspace(for: user)
         async let remote = remoteSync.loadWorkspace(for: user)
 
-        let localValue = (try? await local) ?? UserWorkspace.seeded(for: user)
+        let localValue = (try? await local) ?? UserWorkspace.empty(for: user)
         let remoteValue = try? await remote
 
         guard let remoteValue else {

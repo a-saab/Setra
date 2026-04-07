@@ -6,9 +6,9 @@ struct WeeklyScheduleView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                SectionHeader("Weekly Split", subtitle: "Plan once, repeat with clarity")
+                SectionHeader("Weekly Split", subtitle: "Ordered from your chosen week start")
 
-                ForEach(workspaceStore.workspace?.schedule.days ?? []) { day in
+                ForEach(workspaceStore.workspace?.orderedScheduleDays ?? []) { day in
                     NavigationLink {
                         DayDetailView(day: day)
                     } label: {

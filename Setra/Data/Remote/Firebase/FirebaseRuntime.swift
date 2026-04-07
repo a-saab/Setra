@@ -87,7 +87,7 @@ final class LiveFirebaseAuthProvider: AuthProviding {
 
     func signInWithGoogle() async throws -> AuthUser {
         guard
-            let scene = await UIApplication.shared.connectedScenes.first as? UIWindowScene,
+            let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
             let root = scene.windows.first?.rootViewController,
             let clientID = FirebaseApp.app()?.options.clientID
         else {
@@ -153,7 +153,7 @@ struct LiveFirebaseWorkspaceProvider {
 
         let profile = try decode(UserProfile.self, from: profileData)
         let settings = try settingsSnapshot.data().map { try decode(AppSettings.self, from: $0) } ?? .default
-        let schedule = try scheduleSnapshot.data().map { try decode(WeeklySchedule.self, from: $0) } ?? SeedData.defaultWeeklySchedule(unit: settings.weightUnit)
+        let schedule = try scheduleSnapshot.data().map { try decode(WeeklySchedule.self, from: $0) } ?? WeeklySchedule.empty(startingAt: settings.firstWeekday)
         let templates = try templateSnapshot.documents.map { try decode(WorkoutTemplate.self, from: $0.data()) }
         let customExercises = try customExerciseSnapshot.documents.map { try decode(Exercise.self, from: $0.data()) }
         let sessions = try sessionSnapshot.documents.map { try decode(WorkoutSession.self, from: $0.data()) }

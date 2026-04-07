@@ -5,43 +5,35 @@ struct MainTabView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            NavigationStack {
-                DashboardView()
-            }
-            .tag(AppTab.home)
-            .tabItem {
-                Label("Home", systemImage: "house.fill")
+            Tab("Home", systemImage: "house.fill", value: .home) {
+                NavigationStack {
+                    DashboardView()
+                }
             }
 
-            NavigationStack {
-                WeeklyScheduleView()
-            }
-            .tag(AppTab.plan)
-            .tabItem {
-                Label("Plan", systemImage: "calendar")
+            Tab("Plan", systemImage: "calendar", value: .plan) {
+                NavigationStack {
+                    WeeklyScheduleView()
+                }
             }
 
-            NavigationStack {
-                HistoryRootView()
-            }
-            .tag(AppTab.history)
-            .tabItem {
-                Label("History", systemImage: "chart.line.uptrend.xyaxis")
+            Tab("History", systemImage: "chart.line.uptrend.xyaxis", value: .history) {
+                NavigationStack {
+                    HistoryRootView()
+                }
             }
 
-            NavigationStack {
-                ProfileView()
-            }
-            .tag(AppTab.profile)
-            .tabItem {
-                Label("Profile", systemImage: "person.crop.circle")
+            Tab("Profile", systemImage: "person.crop.circle", value: .profile) {
+                NavigationStack {
+                    ProfileView()
+                }
             }
         }
         .tint(SetraTheme.accent)
     }
 }
 
-enum AppTab {
+enum AppTab: Hashable {
     case home
     case plan
     case history

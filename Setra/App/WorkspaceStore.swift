@@ -61,7 +61,7 @@ final class WorkspaceStore: ObservableObject {
             workspace = try await repository.loadWorkspace(for: user)
         } catch {
             errorMessage = error.localizedDescription
-            workspace = UserWorkspace.seeded(for: user)
+            workspace = UserWorkspace.empty(for: user)
         }
     }
 

@@ -3,7 +3,6 @@ import SwiftUI
 
 struct DashboardView: View {
     @EnvironmentObject private var workspaceStore: WorkspaceStore
-    @EnvironmentObject private var authController: AuthController
 
     @State private var activeWorkout: WorkoutSession?
 
@@ -38,6 +37,12 @@ struct DashboardView: View {
                                 subtitle: "\(exercise.canonicalName) • \(recentPR.label)",
                                 systemImage: "sparkles"
                             )
+                        } else {
+                            HighlightRow(
+                                title: "Recent PR",
+                                subtitle: "No PRs yet. Your first logged workout starts the trendline.",
+                                systemImage: "sparkles"
+                            )
                         }
 
                         if workspaceStore.analytics.bodyweightTrend.count > 1 {
@@ -57,7 +62,7 @@ struct DashboardView: View {
 
                 GlassCard {
                     VStack(alignment: .leading, spacing: 12) {
-                        SectionHeader("Upcoming", subtitle: "Keep the week frictionless")
+                        SectionHeader("Upcoming", subtitle: "Ordered from your chosen week start")
                         ForEach(upcomingDays) { day in
                             HighlightRow(
                                 title: day.weekday.title,
@@ -86,12 +91,12 @@ struct DashboardView: View {
 
     private var upcomingDays: [ScheduleDayPlan] {
         guard let workspace = workspaceStore.workspace else { return [] }
-        let all = workspace.schedule.days
-        let currentIndex = Weekday.today.rawValue
-        return all
-            .filter { $0.weekday.rawValue > currentIndex }
-            .prefix(3)
-            .map { $0 }
+        let ordered = workspace.orderedScheduleDays
+        guard let currentIndex = ordered.firstIndex(where: { $0.weekday == .today }) else {
+            return Array(ordered.prefix(3))
+        }
+        let rotated = Array(ordered[(currentIndex + 1)...]) + Array(ordered[..<currentIndex])
+        return Array(rotated.prefix(3))
     }
 
     private var adherenceText: String {
@@ -139,12 +144,14 @@ private struct DashboardHeroCard: View {
                     Text(previousSummary.lastDescription)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
+                } else if day.kind == .workout {
+                    Text("No previous performance yet. Your first session creates the baseline.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
 
-                Button(day.kind == .rest ? "Mobility Session" : "Start Workout") {
-                    onStart()
-                }
-                .buttonStyle(PrimaryActionButtonStyle())
+                Button(day.kind == .rest ? "Mobility Session" : "Start Workout", action: onStart)
+                    .buttonStyle(PrimaryActionButtonStyle())
             }
         }
     }
@@ -172,21 +179,6 @@ private struct HighlightRow: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
-        }
-    }
-}
-
-private extension Weekday {
-    static var today: Weekday {
-        let value = Calendar.current.component(.weekday, from: .now)
-        switch value {
-        case 2: return .monday
-        case 3: return .tuesday
-        case 4: return .wednesday
-        case 5: return .thursday
-        case 6: return .friday
-        case 7: return .saturday
-        default: return .sunday
         }
     }
 }

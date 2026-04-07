@@ -7,6 +7,7 @@ struct AppRootView: View {
     var body: some View {
         ZStack {
             SetraTheme.screenBackground
+                .overlay(SetraTheme.ambientGlow)
                 .ignoresSafeArea()
 
             switch authController.phase {
@@ -17,7 +18,7 @@ struct AppRootView: View {
             case .signedIn(let user):
                 if workspaceStore.isBootstrapping {
                     SplashView(subtitle: "Loading your training system")
-                } else if !(workspaceStore.workspace?.profile.hasCompletedOnboarding ?? false) {
+                } else if shouldShowOnboarding {
                     OnboardingFlowView(user: user)
                 } else {
                     MainTabView()
@@ -36,6 +37,10 @@ struct AppRootView: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
+    }
+
+    private var shouldShowOnboarding: Bool {
+        AppFlags.forceOnboardingForTesting || !(workspaceStore.workspace?.profile.hasCompletedOnboarding ?? false)
     }
 }
 

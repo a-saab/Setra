@@ -5,9 +5,35 @@ enum WeightUnit: String, Codable, CaseIterable, Hashable, Identifiable {
     case pounds
     case kilograms
 
-    var id: String { rawValue }
-    var shortLabel: String { self == .pounds ? "lb" : "kg" }
-    var displayName: String { self == .pounds ? "Pounds" : "Kilograms" }
+    nonisolated var id: String { rawValue }
+    nonisolated var shortLabel: String { self == .pounds ? "lb" : "kg" }
+    nonisolated var displayName: String { self == .pounds ? "Pounds" : "Kilograms" }
+    nonisolated var defaultBarbellWeight: Double { self == .pounds ? 45 : 20 }
+    nonisolated var defaultUpperIncrement: Double { self == .pounds ? 5 : 2.5 }
+    nonisolated var defaultLowerIncrement: Double { self == .pounds ? 10 : 5 }
+
+    nonisolated var defaultPlateInventory: [PlateInventoryItem] {
+        switch self {
+        case .pounds:
+            [
+                PlateInventoryItem(weight: 45, unit: .pounds, countPerSide: 4),
+                PlateInventoryItem(weight: 35, unit: .pounds, countPerSide: 2),
+                PlateInventoryItem(weight: 25, unit: .pounds, countPerSide: 2),
+                PlateInventoryItem(weight: 10, unit: .pounds, countPerSide: 2),
+                PlateInventoryItem(weight: 5, unit: .pounds, countPerSide: 2),
+                PlateInventoryItem(weight: 2.5, unit: .pounds, countPerSide: 2),
+            ]
+        case .kilograms:
+            [
+                PlateInventoryItem(weight: 20, unit: .kilograms, countPerSide: 4),
+                PlateInventoryItem(weight: 15, unit: .kilograms, countPerSide: 2),
+                PlateInventoryItem(weight: 10, unit: .kilograms, countPerSide: 2),
+                PlateInventoryItem(weight: 5, unit: .kilograms, countPerSide: 2),
+                PlateInventoryItem(weight: 2.5, unit: .kilograms, countPerSide: 2),
+                PlateInventoryItem(weight: 1.25, unit: .kilograms, countPerSide: 2),
+            ]
+        }
+    }
 }
 
 enum ThemePreference: String, Codable, CaseIterable, Identifiable {
@@ -25,6 +51,41 @@ enum ThemePreference: String, Codable, CaseIterable, Identifiable {
             .dark
         case .light:
             .light
+        }
+    }
+}
+
+enum BarbellEntryMode: String, Codable, CaseIterable, Hashable, Identifiable {
+    case shorthandPlatesPerSide
+    case perSideLoad
+    case totalLoadExcludingBar
+    case totalLoadIncludingBar
+
+    var id: String { rawValue }
+
+    nonisolated var title: String {
+        switch self {
+        case .shorthandPlatesPerSide:
+            "Plate Shorthand"
+        case .perSideLoad:
+            "One Side Load"
+        case .totalLoadExcludingBar:
+            "Total Without Bar"
+        case .totalLoadIncludingBar:
+            "Total With Bar"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .shorthandPlatesPerSide:
+            "Examples: 1p, 1p25, 2p10"
+        case .perSideLoad:
+            "A number means one side only"
+        case .totalLoadExcludingBar:
+            "A number means plates only"
+        case .totalLoadIncludingBar:
+            "A number means full system weight"
         }
     }
 }
@@ -77,8 +138,8 @@ enum Weekday: Int, Codable, CaseIterable, Hashable, Identifiable {
     case saturday
     case sunday
 
-    var id: Int { rawValue }
-    var title: String {
+    nonisolated var id: Int { rawValue }
+    nonisolated var title: String {
         switch self {
         case .monday: "Monday"
         case .tuesday: "Tuesday"
@@ -90,7 +151,26 @@ enum Weekday: Int, Codable, CaseIterable, Hashable, Identifiable {
         }
     }
 
-    var shortTitle: String { String(title.prefix(3)) }
+    nonisolated var shortTitle: String { String(title.prefix(3)) }
+
+    nonisolated static func ordered(startingAt firstWeekday: Weekday) -> [Weekday] {
+        let all = Weekday.allCases
+        guard let firstIndex = all.firstIndex(of: firstWeekday) else { return all }
+        return Array(all[firstIndex...]) + Array(all[..<firstIndex])
+    }
+
+    nonisolated static var today: Weekday {
+        let value = Calendar.current.component(.weekday, from: .now)
+        switch value {
+        case 2: return .monday
+        case 3: return .tuesday
+        case 4: return .wednesday
+        case 5: return .thursday
+        case 6: return .friday
+        case 7: return .saturday
+        default: return .sunday
+        }
+    }
 }
 
 enum DayPlanKind: String, Codable, CaseIterable, Hashable, Identifiable {
@@ -126,7 +206,7 @@ enum MuscleGroup: String, Codable, CaseIterable, Hashable, Identifiable {
             .capitalized
     }
 
-    var symbolName: String {
+    nonisolated var symbolName: String {
         switch self {
         case .chest: "figure.strengthtraining.traditional"
         case .back: "figure.run"
@@ -369,7 +449,7 @@ struct PlannedExercise: Identifiable, Codable, Hashable {
     var warmUpSets: [PlannedWarmUpSet]
     var supersetTag: String?
 
-    static func from(exercise: Exercise, unit: WeightUnit, order: Int) -> PlannedExercise {
+    nonisolated static func from(exercise: Exercise, unit: WeightUnit, order: Int) -> PlannedExercise {
         PlannedExercise(
             id: UUID().uuidString,
             exerciseID: exercise.id,
@@ -398,7 +478,7 @@ struct ScheduleDayPlan: Identifiable, Codable, Hashable {
     var notes: String
     var exercises: [PlannedExercise]
 
-    static func restDay(for weekday: Weekday) -> ScheduleDayPlan {
+    nonisolated static func restDay(for weekday: Weekday) -> ScheduleDayPlan {
         ScheduleDayPlan(
             id: UUID().uuidString,
             weekday: weekday,
@@ -417,8 +497,21 @@ struct WeeklySchedule: Identifiable, Codable, Hashable {
     var notes: String
     var days: [ScheduleDayPlan]
 
+    nonisolated static func empty(startingAt firstWeekday: Weekday) -> WeeklySchedule {
+        WeeklySchedule(
+            id: UUID().uuidString,
+            title: "Weekly Split",
+            notes: "",
+            days: Weekday.ordered(startingAt: firstWeekday).map { ScheduleDayPlan.restDay(for: $0) }
+        )
+    }
+
     func day(for weekday: Weekday) -> ScheduleDayPlan? {
         days.first { $0.weekday == weekday }
+    }
+
+    func orderedDays(startingAt firstWeekday: Weekday) -> [ScheduleDayPlan] {
+        Weekday.ordered(startingAt: firstWeekday).compactMap(day(for:))
     }
 
     mutating func set(_ day: ScheduleDayPlan) {
@@ -544,9 +637,11 @@ struct UserProfile: Codable, Hashable {
 
 struct AppSettings: Codable, Hashable {
     var weightUnit: WeightUnit
+    var firstWeekday: Weekday
     var defaultBarbellWeight: Double
     var plateInventory: [PlateInventoryItem]
     var favoritePlateSetups: [FavoritePlateSetup]
+    var preferredBarbellEntryMode: BarbellEntryMode
     var restTimerSeconds: Int
     var upperBodyIncrement: Double
     var lowerBodyIncrement: Double
@@ -556,29 +651,118 @@ struct AppSettings: Codable, Hashable {
     var gymEquipmentLevel: GymEquipmentLevel
     var trainingGoals: [TrainingGoal]
 
-    static let `default` = AppSettings(
+    enum CodingKeys: String, CodingKey {
+        case weightUnit
+        case firstWeekday
+        case defaultBarbellWeight
+        case plateInventory
+        case favoritePlateSetups
+        case preferredBarbellEntryMode
+        case restTimerSeconds
+        case upperBodyIncrement
+        case lowerBodyIncrement
+        case themePreference
+        case showInlinePerformance
+        case hapticsEnabled
+        case gymEquipmentLevel
+        case trainingGoals
+    }
+
+    nonisolated static let `default` = AppSettings(
         weightUnit: .pounds,
-        defaultBarbellWeight: 45,
-        plateInventory: [
-            PlateInventoryItem(weight: 45, unit: .pounds, countPerSide: 4),
-            PlateInventoryItem(weight: 25, unit: .pounds, countPerSide: 2),
-            PlateInventoryItem(weight: 10, unit: .pounds, countPerSide: 2),
-            PlateInventoryItem(weight: 5, unit: .pounds, countPerSide: 2),
-            PlateInventoryItem(weight: 2.5, unit: .pounds, countPerSide: 2),
-        ],
+        firstWeekday: .monday,
+        defaultBarbellWeight: WeightUnit.pounds.defaultBarbellWeight,
+        plateInventory: WeightUnit.pounds.defaultPlateInventory,
         favoritePlateSetups: [],
+        preferredBarbellEntryMode: .shorthandPlatesPerSide,
         restTimerSeconds: 120,
-        upperBodyIncrement: 5,
-        lowerBodyIncrement: 10,
+        upperBodyIncrement: WeightUnit.pounds.defaultUpperIncrement,
+        lowerBodyIncrement: WeightUnit.pounds.defaultLowerIncrement,
         themePreference: .system,
         showInlinePerformance: true,
         hapticsEnabled: true,
         gymEquipmentLevel: .commercialGym,
         trainingGoals: [.hypertrophy]
     )
+
+    init(
+        weightUnit: WeightUnit,
+        firstWeekday: Weekday,
+        defaultBarbellWeight: Double,
+        plateInventory: [PlateInventoryItem],
+        favoritePlateSetups: [FavoritePlateSetup],
+        preferredBarbellEntryMode: BarbellEntryMode,
+        restTimerSeconds: Int,
+        upperBodyIncrement: Double,
+        lowerBodyIncrement: Double,
+        themePreference: ThemePreference,
+        showInlinePerformance: Bool,
+        hapticsEnabled: Bool,
+        gymEquipmentLevel: GymEquipmentLevel,
+        trainingGoals: [TrainingGoal]
+    ) {
+        self.weightUnit = weightUnit
+        self.firstWeekday = firstWeekday
+        self.defaultBarbellWeight = defaultBarbellWeight
+        self.plateInventory = plateInventory
+        self.favoritePlateSetups = favoritePlateSetups
+        self.preferredBarbellEntryMode = preferredBarbellEntryMode
+        self.restTimerSeconds = restTimerSeconds
+        self.upperBodyIncrement = upperBodyIncrement
+        self.lowerBodyIncrement = lowerBodyIncrement
+        self.themePreference = themePreference
+        self.showInlinePerformance = showInlinePerformance
+        self.hapticsEnabled = hapticsEnabled
+        self.gymEquipmentLevel = gymEquipmentLevel
+        self.trainingGoals = trainingGoals
+    }
+
+    nonisolated init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let defaultSettings = AppSettings.default
+        let decodedUnit = try container.decodeIfPresent(WeightUnit.self, forKey: .weightUnit) ?? defaultSettings.weightUnit
+        let unitDefaultBarbellWeight = decodedUnit.defaultBarbellWeight
+        let unitDefaultPlateInventory = decodedUnit.defaultPlateInventory
+        let unitDefaultUpperIncrement = decodedUnit.defaultUpperIncrement
+        let unitDefaultLowerIncrement = decodedUnit.defaultLowerIncrement
+        self.weightUnit = decodedUnit
+        self.firstWeekday = try container.decodeIfPresent(Weekday.self, forKey: .firstWeekday) ?? defaultSettings.firstWeekday
+        self.defaultBarbellWeight = try container.decodeIfPresent(Double.self, forKey: .defaultBarbellWeight) ?? unitDefaultBarbellWeight
+        self.plateInventory = try container.decodeIfPresent([PlateInventoryItem].self, forKey: .plateInventory) ?? unitDefaultPlateInventory
+        self.favoritePlateSetups = try container.decodeIfPresent([FavoritePlateSetup].self, forKey: .favoritePlateSetups) ?? []
+        self.preferredBarbellEntryMode = try container.decodeIfPresent(BarbellEntryMode.self, forKey: .preferredBarbellEntryMode) ?? .shorthandPlatesPerSide
+        self.restTimerSeconds = try container.decodeIfPresent(Int.self, forKey: .restTimerSeconds) ?? defaultSettings.restTimerSeconds
+        self.upperBodyIncrement = try container.decodeIfPresent(Double.self, forKey: .upperBodyIncrement) ?? unitDefaultUpperIncrement
+        self.lowerBodyIncrement = try container.decodeIfPresent(Double.self, forKey: .lowerBodyIncrement) ?? unitDefaultLowerIncrement
+        self.themePreference = try container.decodeIfPresent(ThemePreference.self, forKey: .themePreference) ?? defaultSettings.themePreference
+        self.showInlinePerformance = try container.decodeIfPresent(Bool.self, forKey: .showInlinePerformance) ?? defaultSettings.showInlinePerformance
+        self.hapticsEnabled = try container.decodeIfPresent(Bool.self, forKey: .hapticsEnabled) ?? defaultSettings.hapticsEnabled
+        self.gymEquipmentLevel = try container.decodeIfPresent(GymEquipmentLevel.self, forKey: .gymEquipmentLevel) ?? defaultSettings.gymEquipmentLevel
+        self.trainingGoals = try container.decodeIfPresent([TrainingGoal].self, forKey: .trainingGoals) ?? defaultSettings.trainingGoals
+    }
+
+    mutating func applyWeightUnitDefaults() {
+        defaultBarbellWeight = weightUnit.defaultBarbellWeight
+        upperBodyIncrement = weightUnit.defaultUpperIncrement
+        lowerBodyIncrement = weightUnit.defaultLowerIncrement
+        plateInventory = weightUnit.defaultPlateInventory
+    }
 }
 
 struct UserWorkspace: Codable, Hashable {
+    enum CodingKeys: String, CodingKey {
+        case profile
+        case settings
+        case schedule
+        case templates
+        case customExercises
+        case sessions
+        case bodyweightLogs
+        case favoriteExerciseIDs
+        case recentExerciseIDs
+        case personalRecords
+        case updatedAt
+    }
     var profile: UserProfile
     var settings: AppSettings
     var schedule: WeeklySchedule
@@ -591,8 +775,34 @@ struct UserWorkspace: Codable, Hashable {
     var personalRecords: [PersonalRecord]
     var updatedAt: Date
 
-    static func seeded(for user: AuthUser) -> UserWorkspace {
-        let starter = SeedData.defaultWeeklySchedule(unit: .pounds)
+    nonisolated init(
+        profile: UserProfile,
+        settings: AppSettings,
+        schedule: WeeklySchedule,
+        templates: [WorkoutTemplate],
+        customExercises: [Exercise],
+        sessions: [WorkoutSession],
+        bodyweightLogs: [BodyweightLog],
+        favoriteExerciseIDs: Set<String>,
+        recentExerciseIDs: [String],
+        personalRecords: [PersonalRecord],
+        updatedAt: Date
+    ) {
+        self.profile = profile
+        self.settings = settings
+        self.schedule = schedule
+        self.templates = templates
+        self.customExercises = customExercises
+        self.sessions = sessions
+        self.bodyweightLogs = bodyweightLogs
+        self.favoriteExerciseIDs = favoriteExerciseIDs
+        self.recentExerciseIDs = recentExerciseIDs
+        self.personalRecords = personalRecords
+        self.updatedAt = updatedAt
+    }
+
+    nonisolated static func empty(for user: AuthUser) -> UserWorkspace {
+        let settings = AppSettings.default
         return UserWorkspace(
             profile: UserProfile(
                 displayName: user.displayName,
@@ -601,12 +811,35 @@ struct UserWorkspace: Codable, Hashable {
                 createdAt: .now,
                 updatedAt: .now
             ),
-            settings: .default,
-            schedule: starter,
+            settings: settings,
+            schedule: WeeklySchedule.empty(startingAt: settings.firstWeekday),
             templates: [],
             customExercises: [],
-            sessions: SeedData.recentSessions(unit: .pounds),
-            bodyweightLogs: SeedData.bodyweightLogs(unit: .pounds),
+            sessions: [],
+            bodyweightLogs: [],
+            favoriteExerciseIDs: [],
+            recentExerciseIDs: [],
+            personalRecords: [],
+            updatedAt: .now
+        )
+    }
+
+    nonisolated static func seeded(for user: AuthUser) -> UserWorkspace {
+        let settings = AppSettings.default
+        return UserWorkspace(
+            profile: UserProfile(
+                displayName: user.displayName,
+                email: user.email,
+                hasCompletedOnboarding: true,
+                createdAt: .now,
+                updatedAt: .now
+            ),
+            settings: settings,
+            schedule: SeedData.defaultWeeklySchedule(unit: settings.weightUnit),
+            templates: [],
+            customExercises: [],
+            sessions: SeedData.recentSessions(unit: settings.weightUnit),
+            bodyweightLogs: SeedData.bodyweightLogs(unit: settings.weightUnit),
             favoriteExerciseIDs: ["bench-press", "lat-pulldown", "barbell-back-squat"],
             recentExerciseIDs: [],
             personalRecords: [],
@@ -614,11 +847,41 @@ struct UserWorkspace: Codable, Hashable {
         )
     }
 
-    func touchingUpdate() -> UserWorkspace {
+    nonisolated func touchingUpdate() -> UserWorkspace {
         var copy = self
         copy.profile.updatedAt = .now
         copy.updatedAt = .now
         return copy
+    }
+
+    nonisolated init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.profile = try container.decode(UserProfile.self, forKey: .profile)
+        self.settings = try container.decode(AppSettings.self, forKey: .settings)
+        self.schedule = try container.decode(WeeklySchedule.self, forKey: .schedule)
+        self.templates = try container.decode([WorkoutTemplate].self, forKey: .templates)
+        self.customExercises = try container.decode([Exercise].self, forKey: .customExercises)
+        self.sessions = try container.decode([WorkoutSession].self, forKey: .sessions)
+        self.bodyweightLogs = try container.decode([BodyweightLog].self, forKey: .bodyweightLogs)
+        self.favoriteExerciseIDs = try container.decode(Set<String>.self, forKey: .favoriteExerciseIDs)
+        self.recentExerciseIDs = try container.decode([String].self, forKey: .recentExerciseIDs)
+        self.personalRecords = try container.decode([PersonalRecord].self, forKey: .personalRecords)
+        self.updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+    }
+
+    nonisolated func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(profile, forKey: .profile)
+        try container.encode(settings, forKey: .settings)
+        try container.encode(schedule, forKey: .schedule)
+        try container.encode(templates, forKey: .templates)
+        try container.encode(customExercises, forKey: .customExercises)
+        try container.encode(sessions, forKey: .sessions)
+        try container.encode(bodyweightLogs, forKey: .bodyweightLogs)
+        try container.encode(favoriteExerciseIDs, forKey: .favoriteExerciseIDs)
+        try container.encode(recentExerciseIDs, forKey: .recentExerciseIDs)
+        try container.encode(personalRecords, forKey: .personalRecords)
+        try container.encode(updatedAt, forKey: .updatedAt)
     }
 }
 
@@ -678,5 +941,11 @@ extension Array where Element: Hashable {
 extension Double {
     var clean: String {
         truncatingRemainder(dividingBy: 1) == 0 ? String(Int(self)) : String(format: "%.1f", self)
+    }
+}
+
+extension UserWorkspace {
+    var orderedScheduleDays: [ScheduleDayPlan] {
+        schedule.orderedDays(startingAt: settings.firstWeekday)
     }
 }
