@@ -1,18 +1,19 @@
-import Combine
 import Foundation
+import Observation
 import SwiftUI
 
 @MainActor
-final class WorkspaceStore: ObservableObject {
+@Observable
+final class WorkspaceStore {
     private let repository: WorkspaceRepository
     private let progressionEngine: ProgressionEngine
     private let analyticsEngine: AnalyticsEngine
     private let searchEngine: ExerciseSearchEngine
 
-    @Published var workspace: UserWorkspace?
-    @Published var isBootstrapping = false
-    @Published var errorMessage: String?
-    @Published var bannerMessage: String?
+    var workspace: UserWorkspace?
+    var isBootstrapping = false
+    var errorMessage: String?
+    var bannerMessage: String?
 
     private var persistTask: Task<Void, Never>?
     private var bannerTask: Task<Void, Never>?

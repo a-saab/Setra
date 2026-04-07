@@ -3,7 +3,7 @@ import SwiftUI
 struct OnboardingFlowView: View {
     let user: AuthUser
 
-    @EnvironmentObject private var workspaceStore: WorkspaceStore
+    @Environment(WorkspaceStore.self) private var workspaceStore
 
     @State private var displayName: String
     @State private var settings = AppSettings.default

@@ -1,16 +1,17 @@
-import Combine
 import Foundation
+import Observation
 
 @MainActor
-final class AuthController: ObservableObject {
+@Observable
+final class AuthController {
     enum Phase: Equatable {
         case launching
         case signedOut
         case signedIn(AuthUser)
     }
 
-    @Published var phase: Phase = .launching
-    @Published var errorMessage: String?
+    var phase: Phase = .launching
+    var errorMessage: String?
 
     private let provider: AuthProviding
     private var streamTask: Task<Void, Never>?
@@ -51,6 +52,7 @@ final class AuthController: ObservableObject {
     }
 
     func signUp(email: String, password: String, displayName: String) async -> Bool {
+        errorMessage = nil
         do {
             let user = try await provider.signUp(email: email, password: password, displayName: displayName)
             phase = .signedIn(user)
@@ -62,6 +64,7 @@ final class AuthController: ObservableObject {
     }
 
     func signIn(email: String, password: String) async -> Bool {
+        errorMessage = nil
         do {
             let user = try await provider.signIn(email: email, password: password)
             phase = .signedIn(user)
@@ -73,6 +76,7 @@ final class AuthController: ObservableObject {
     }
 
     func signInWithGoogle() async -> Bool {
+        errorMessage = nil
         do {
             let user = try await provider.signInWithGoogle()
             phase = .signedIn(user)
@@ -84,6 +88,7 @@ final class AuthController: ObservableObject {
     }
 
     func sendPasswordReset(email: String) async -> Bool {
+        errorMessage = nil
         do {
             try await provider.sendPasswordReset(email: email)
             errorMessage = "Reset link sent to \(email)"
@@ -95,6 +100,7 @@ final class AuthController: ObservableObject {
     }
 
     func signOut() async {
+        errorMessage = nil
         do {
             try await provider.signOut()
             phase = .signedOut

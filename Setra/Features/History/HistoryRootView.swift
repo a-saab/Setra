@@ -2,55 +2,149 @@ import Charts
 import SwiftUI
 
 struct HistoryRootView: View {
-    @State private var selection = 0
+    @Environment(WorkspaceStore.self) private var workspaceStore
 
     var body: some View {
-        VStack(spacing: 16) {
-            Picker("Mode", selection: $selection) {
-                Text("History").tag(0)
-                Text("Analytics").tag(1)
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 18) {
+                summaryCard
+                volumeCard
+                recordsCard
+                recentSessionsCard
             }
-            .pickerStyle(.segmented)
             .padding(.horizontal, 20)
-            .padding(.top, 12)
-
-            if selection == 0 {
-                WorkoutHistoryView()
-            } else {
-                AnalyticsView()
-            }
+            .padding(.vertical, 18)
+            .padding(.bottom, 20)
         }
-        .background(SetraTheme.screenBackground.ignoresSafeArea())
-        .navigationTitle("History")
+        .scrollIndicators(.hidden)
+        .background(
+            SetraTheme.screenBackground
+                .overlay(SetraTheme.ambientGlow)
+                .ignoresSafeArea()
+        )
+        .navigationTitle("Progress")
     }
-}
 
-private struct WorkoutHistoryView: View {
-    @EnvironmentObject private var workspaceStore: WorkspaceStore
+    private var summaryCard: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: 16) {
+                SectionHeader("Progress Summary", subtitle: "History and analytics should feel like one coherent story")
 
-    var body: some View {
-        List {
-            ForEach(workspaceStore.historySessions) { session in
-                NavigationLink {
-                    WorkoutSummaryView(session: session)
-                } label: {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(session.title)
-                            .font(.headline)
-                        Text(session.startedAt.formatted(.dateTime.month(.abbreviated).day().hour().minute()))
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        Text("Volume \(session.totalVolume.clean)")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.vertical, 6)
+                HStack(spacing: 12) {
+                    StatChip(label: "Sessions", value: "\(workspaceStore.historySessions.count)")
+                    StatChip(label: "Records", value: "\(workspaceStore.analytics.recentPRs.count)", accent: SetraTheme.success)
+                    StatChip(label: "Streak", value: "\(workspaceStore.analytics.streakCount)d", accent: SetraTheme.accentSecondary)
                 }
             }
         }
-        .listStyle(.insetGrouped)
-        .scrollContentBackground(.hidden)
-        .background(SetraTheme.screenBackground.ignoresSafeArea())
+    }
+
+    private var volumeCard: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: 16) {
+                SectionHeader("Volume Trend", subtitle: "Weekly work should be visible without opening a separate mode")
+
+                if workspaceStore.analytics.volumeByWeek.isEmpty {
+                    Text("Volume appears after completed workouts. The redesign goal is to make low-data states feel calm, not barren.")
+                        .font(.footnote)
+                        .foregroundStyle(SetraTheme.secondaryText)
+                } else {
+                    Chart(workspaceStore.analytics.volumeByWeek) { point in
+                        BarMark(
+                            x: .value("Week", point.label),
+                            y: .value("Volume", point.value)
+                        )
+                        .foregroundStyle(SetraTheme.accentGradient)
+                        .clipShape(.rect(cornerRadius: 8))
+                    }
+                    .frame(height: 190)
+                    .chartXAxis {
+                        AxisMarks(values: .automatic(desiredCount: 4))
+                    }
+                    .chartYAxis(.hidden)
+                }
+            }
+        }
+    }
+
+    private var recordsCard: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: 14) {
+                SectionHeader("Recent Bests", subtitle: "The moments that create emotional payoff after training")
+
+                if workspaceStore.analytics.recentPRs.isEmpty {
+                    Text("No records yet. Your first sessions are still valuable because they define the baseline.")
+                        .font(.footnote)
+                        .foregroundStyle(SetraTheme.secondaryText)
+                } else {
+                    ForEach(workspaceStore.analytics.recentPRs.prefix(5)) { record in
+                        HStack(spacing: 14) {
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(SetraTheme.mutedFill)
+                                .frame(width: 40, height: 40)
+                                .overlay(
+                                    Image(systemName: "sparkles")
+                                        .foregroundStyle(SetraTheme.success)
+                                )
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(exerciseName(for: record.exerciseID))
+                                    .font(.headline.weight(.semibold))
+                                    .foregroundStyle(SetraTheme.primaryText)
+                                Text(record.label)
+                                    .font(.subheadline)
+                                    .foregroundStyle(SetraTheme.secondaryText)
+                            }
+
+                            Spacer()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var recentSessionsCard: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: 14) {
+                SectionHeader("Recent Sessions", subtitle: "The latest training history should stay close to the summary")
+
+                if workspaceStore.historySessions.isEmpty {
+                    Text("No workouts logged yet.")
+                        .font(.footnote)
+                        .foregroundStyle(SetraTheme.secondaryText)
+                } else {
+                    ForEach(workspaceStore.historySessions.prefix(8)) { session in
+                        NavigationLink {
+                            WorkoutSummaryView(session: session)
+                        } label: {
+                            HStack(spacing: 14) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(session.title)
+                                        .font(.headline.weight(.semibold))
+                                        .foregroundStyle(SetraTheme.primaryText)
+                                    Text(session.startedAt.formatted(.dateTime.month(.abbreviated).day().hour().minute()))
+                                        .font(.subheadline)
+                                        .foregroundStyle(SetraTheme.secondaryText)
+                                }
+
+                                Spacer()
+
+                                Text(session.totalVolume.clean)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(SetraTheme.accent)
+                            }
+                            .padding(.vertical, 4)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+    }
+
+    private func exerciseName(for id: String) -> String {
+        workspaceStore.exercise(by: id)?.canonicalName ?? "Exercise"
     }
 }
 
@@ -77,57 +171,6 @@ private struct WorkoutSummaryView: View {
 
     private func workspaceExerciseName(_ id: String) -> String {
         SeedData.exerciseLibrary.first(where: { $0.id == id })?.canonicalName ?? "Exercise"
-    }
-}
-
-private struct AnalyticsView: View {
-    @EnvironmentObject private var workspaceStore: WorkspaceStore
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                GlassCard {
-                    VStack(alignment: .leading, spacing: 12) {
-                        SectionHeader("Volume", subtitle: "Weekly working volume")
-                        Chart(workspaceStore.analytics.volumeByWeek) { point in
-                            BarMark(
-                                x: .value("Week", point.label),
-                                y: .value("Volume", point.value)
-                            )
-                            .foregroundStyle(SetraTheme.accentGradient)
-                        }
-                        .frame(height: 180)
-                    }
-                }
-
-                GlassCard {
-                    VStack(alignment: .leading, spacing: 12) {
-                        SectionHeader("Bodyweight", subtitle: "Trend over time")
-                        Chart(workspaceStore.analytics.bodyweightTrend) { point in
-                            LineMark(
-                                x: .value("Date", point.label),
-                                y: .value("Weight", point.value)
-                            )
-                            .foregroundStyle(SetraTheme.success)
-                        }
-                        .frame(height: 180)
-                    }
-                }
-
-                GlassCard {
-                    VStack(alignment: .leading, spacing: 12) {
-                        SectionHeader("Recent PRs")
-                        ForEach(workspaceStore.analytics.recentPRs) { record in
-                            Text(record.label)
-                                .foregroundStyle(.white)
-                        }
-                    }
-                }
-            }
-            .padding(20)
-            .padding(.bottom, 20)
-        }
-        .background(SetraTheme.screenBackground.ignoresSafeArea())
     }
 }
 

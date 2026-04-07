@@ -3,8 +3,8 @@ import SwiftUI
 
 struct CustomExerciseCreatorView: View {
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject private var workspaceStore: WorkspaceStore
-    @EnvironmentObject private var authController: AuthController
+    @Environment(WorkspaceStore.self) private var workspaceStore
+    @Environment(AuthController.self) private var authController
 
     @State private var name = ""
     @State private var aliases = ""

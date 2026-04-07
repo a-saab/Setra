@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct AppRootView: View {
-    @EnvironmentObject private var authController: AuthController
-    @EnvironmentObject private var workspaceStore: WorkspaceStore
+    @Environment(AuthController.self) private var authController
+    @Environment(WorkspaceStore.self) private var workspaceStore
 
     var body: some View {
         ZStack {

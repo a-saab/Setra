@@ -6,8 +6,8 @@ import FirebaseCore
 @main
 struct SetraApp: App {
     private let container: AppContainer
-    @StateObject private var authController: AuthController
-    @StateObject private var workspaceStore: WorkspaceStore
+    @State private var authController: AuthController
+    @State private var workspaceStore: WorkspaceStore
 
     init() {
 #if canImport(FirebaseCore)
@@ -19,15 +19,15 @@ struct SetraApp: App {
 
         let container = AppContainer.bootstrap()
         self.container = container
-        _authController = StateObject(wrappedValue: container.authController)
-        _workspaceStore = StateObject(wrappedValue: container.workspaceStore)
+        _authController = State(initialValue: container.authController)
+        _workspaceStore = State(initialValue: container.workspaceStore)
     }
 
     var body: some Scene {
         WindowGroup {
             AppRootView()
-                .environmentObject(authController)
-                .environmentObject(workspaceStore)
+                .environment(authController)
+                .environment(workspaceStore)
                 .preferredColorScheme(workspaceStore.workspace?.settings.themePreference.colorScheme)
                 .task(id: authController.currentUser?.id) {
                     await workspaceStore.bootstrap(for: authController.currentUser)

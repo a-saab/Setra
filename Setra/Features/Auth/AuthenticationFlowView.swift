@@ -70,7 +70,7 @@ struct AuthenticationFlowView: View {
 }
 
 private struct GoogleSignInButton: View {
-    @EnvironmentObject private var authController: AuthController
+    @Environment(AuthController.self) private var authController
 
     var body: some View {
         Button {
@@ -86,7 +86,7 @@ private struct GoogleSignInButton: View {
 }
 
 struct LoginView: View {
-    @EnvironmentObject private var authController: AuthController
+    @Environment(AuthController.self) private var authController
     @State private var email = ""
     @State private var password = ""
     @State private var isLoading = false
@@ -133,7 +133,7 @@ struct LoginView: View {
 }
 
 struct SignUpView: View {
-    @EnvironmentObject private var authController: AuthController
+    @Environment(AuthController.self) private var authController
     @State private var displayName = ""
     @State private var email = ""
     @State private var password = ""
@@ -176,7 +176,7 @@ struct SignUpView: View {
 }
 
 struct ForgotPasswordView: View {
-    @EnvironmentObject private var authController: AuthController
+    @Environment(AuthController.self) private var authController
     @State private var email: String
 
     init(initialEmail: String = "") {
@@ -256,13 +256,13 @@ extension View {
             .padding(.vertical, 14)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(SetraTheme.mutedFill)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
+                    .strokeBorder(SetraTheme.panelBorder, lineWidth: 1)
             )
-            .foregroundStyle(.white)
+            .foregroundStyle(SetraTheme.primaryText)
     }
 }
 

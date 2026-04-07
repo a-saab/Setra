@@ -84,7 +84,7 @@ extension View {
         let workspace = PreviewEnvironment.workspaceStore(onboarded: onboarded)
 
         return self
-            .environmentObject(auth)
-            .environmentObject(workspace)
+            .environment(auth)
+            .environment(workspace)
     }
 }

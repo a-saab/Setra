@@ -1,15 +1,27 @@
 import SwiftUI
 
 enum SetraTheme {
-    static let accent = Color(red: 0.36, green: 0.84, blue: 0.98)
-    static let accentSecondary = Color(red: 0.55, green: 0.63, blue: 0.90)
-    static let success = Color(red: 0.42, green: 0.84, blue: 0.60)
-    static let warning = Color(red: 0.96, green: 0.74, blue: 0.33)
-    static let graphite = Color(red: 0.08, green: 0.10, blue: 0.14)
-    static let ink = Color(red: 0.03, green: 0.05, blue: 0.08)
-    static let mist = Color(red: 0.93, green: 0.96, blue: 1.0)
-    static let cardFill = Color.white.opacity(0.08)
-    static let cardBorder = Color.white.opacity(0.10)
+    static let accent = Color(red: 0.19, green: 0.50, blue: 0.96)
+    static let accentSecondary = Color(red: 0.45, green: 0.68, blue: 0.97)
+    static let success = Color(red: 0.19, green: 0.69, blue: 0.51)
+    static let warning = Color(red: 0.86, green: 0.59, blue: 0.18)
+
+    static let screenBackground = LinearGradient(
+        colors: [canvasTop, canvasBase, canvasBottom],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+
+    static let ambientGlow = RadialGradient(
+        colors: [
+            accent.opacity(0.16),
+            accentSecondary.opacity(0.06),
+            .clear,
+        ],
+        center: .topTrailing,
+        startRadius: 20,
+        endRadius: 320
+    )
 
     static let accentGradient = LinearGradient(
         colors: [accent, accentSecondary],
@@ -17,26 +29,19 @@ enum SetraTheme {
         endPoint: .bottomTrailing
     )
 
-    static let screenBackground = LinearGradient(
-        colors: [
-            Color(red: 0.03, green: 0.05, blue: 0.08),
-            Color(red: 0.05, green: 0.08, blue: 0.12),
-            Color(red: 0.03, green: 0.05, blue: 0.08)
-        ],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
+    static let surface = Color(red: 0.09, green: 0.12, blue: 0.17)
+    static let surfaceSecondary = Color(red: 0.11, green: 0.15, blue: 0.21)
+    static let surfaceTertiary = Color(red: 0.14, green: 0.19, blue: 0.26)
+    static let panelBorder = Color.white.opacity(0.08)
+    static let divider = Color.white.opacity(0.08)
+    static let mutedFill = Color.white.opacity(0.06)
 
-    static let ambientGlow = RadialGradient(
-        colors: [
-            accent.opacity(0.22),
-            accentSecondary.opacity(0.08),
-            .clear
-        ],
-        center: .topTrailing,
-        startRadius: 20,
-        endRadius: 320
-    )
+    static let primaryText = Color.white
+    static let secondaryText = Color.white.opacity(0.68)
+
+    private static let canvasTop = Color(red: 0.05, green: 0.07, blue: 0.10)
+    private static let canvasBase = Color(red: 0.06, green: 0.09, blue: 0.13)
+    private static let canvasBottom = Color(red: 0.08, green: 0.11, blue: 0.16)
 }
 
 struct GlassCard<Content: View>: View {
@@ -48,34 +53,27 @@ struct GlassCard<Content: View>: View {
 
     var body: some View {
         content
-            .padding(20)
+            .padding(22)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .background(cardBackground)
-            .shadow(color: .black.opacity(0.24), radius: 28, y: 18)
+            .shadow(
+                color: Color.black.opacity(0.14),
+                radius: 28,
+                x: 0,
+                y: 14
+            )
     }
 
     private var cardBackground: some View {
         RoundedRectangle(cornerRadius: 28, style: .continuous)
-            .fill(
-                LinearGradient(
-                    colors: [
-                        Color.white.opacity(0.10),
-                        Color.white.opacity(0.05)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
+            .fill(SetraTheme.surface.opacity(0.92))
+            .background(
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .fill(.ultraThinMaterial.opacity(0.16))
             )
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 28, style: .continuous)
-                    .strokeBorder(
-                        LinearGradient(
-                            colors: [Color.white.opacity(0.16), Color.white.opacity(0.05)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 1
-                    )
+                    .strokeBorder(SetraTheme.panelBorder.opacity(0.95), lineWidth: 1)
             )
     }
 }
@@ -86,18 +84,18 @@ struct PrimaryActionButtonStyle: ButtonStyle {
             .font(.headline.weight(.semibold))
             .foregroundStyle(.white)
             .padding(.horizontal, 18)
-            .padding(.vertical, 15)
+            .padding(.vertical, 16)
             .frame(maxWidth: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
                     .fill(SetraTheme.accentGradient)
                     .overlay(
                         RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .strokeBorder(Color.white.opacity(0.14), lineWidth: 1)
+                            .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
                     )
-                    .opacity(configuration.isPressed ? 0.88 : 1)
+                    .opacity(configuration.isPressed ? 0.92 : 1)
             )
-            .shadow(color: SetraTheme.accent.opacity(0.28), radius: 20, y: 10)
+            .shadow(color: SetraTheme.accent.opacity(0.26), radius: 16, y: 10)
             .scaleEffect(configuration.isPressed ? 0.985 : 1)
             .animation(.smooth(duration: 0.18), value: configuration.isPressed)
     }
@@ -107,17 +105,17 @@ struct SecondaryActionButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.subheadline.weight(.semibold))
-            .foregroundStyle(.white.opacity(0.92))
+            .foregroundStyle(SetraTheme.primaryText)
             .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.vertical, 13)
             .frame(maxWidth: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(Color.white.opacity(configuration.isPressed ? 0.14 : 0.09))
+                    .fill(SetraTheme.mutedFill.opacity(configuration.isPressed ? 0.84 : 1))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(SetraTheme.cardBorder, lineWidth: 1)
+                    .strokeBorder(SetraTheme.panelBorder, lineWidth: 1)
             )
     }
 }
@@ -131,20 +129,20 @@ struct StatChip: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label.uppercased())
                 .font(.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(SetraTheme.secondaryText)
             Text(value)
                 .font(.headline.weight(.semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(SetraTheme.primaryText)
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(accent.opacity(0.12))
+                .fill(accent.opacity(0.10))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .strokeBorder(accent.opacity(0.18), lineWidth: 1)
+                .strokeBorder(accent.opacity(0.22), lineWidth: 1)
         )
     }
 }
@@ -158,29 +156,30 @@ struct BrandMark: View {
                 .fill(
                     LinearGradient(
                         colors: [
-                            Color.white.opacity(0.20),
-                            Color.white.opacity(0.06)
+                            SetraTheme.surfaceSecondary,
+                            SetraTheme.surface,
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
+
             RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
+                .strokeBorder(SetraTheme.panelBorder, lineWidth: 1)
 
             ZStack {
                 RoundedRectangle(cornerRadius: size * 0.08, style: .continuous)
                     .fill(SetraTheme.accentGradient)
                     .frame(width: size * 0.56, height: size * 0.12)
                 RoundedRectangle(cornerRadius: size * 0.08, style: .continuous)
-                    .fill(Color.white.opacity(0.95))
+                    .fill(.white.opacity(0.96))
                     .frame(width: size * 0.24, height: size * 0.12)
                     .offset(x: size * 0.08, y: size * 0.18)
             }
             .rotationEffect(.degrees(-22))
         }
         .frame(width: size, height: size)
-        .shadow(color: SetraTheme.accent.opacity(0.22), radius: 20, y: 10)
+        .shadow(color: SetraTheme.accent.opacity(0.18), radius: 18, y: 8)
     }
 }
 
@@ -197,11 +196,11 @@ struct SectionHeader: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.title3.weight(.semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(SetraTheme.primaryText)
             if let subtitle {
                 Text(subtitle)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(SetraTheme.secondaryText)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

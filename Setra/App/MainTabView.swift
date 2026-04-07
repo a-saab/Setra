@@ -1,11 +1,11 @@
 import SwiftUI
 
 struct MainTabView: View {
-    @State private var selectedTab: AppTab = .home
+    @State private var selectedTab: AppTab = .today
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            Tab("Home", systemImage: "house.fill", value: .home) {
+            Tab("Today", systemImage: "sun.max.fill", value: .today) {
                 NavigationStack {
                     DashboardView()
                 }
@@ -17,25 +17,27 @@ struct MainTabView: View {
                 }
             }
 
-            Tab("History", systemImage: "chart.line.uptrend.xyaxis", value: .history) {
+            Tab("Progress", systemImage: "chart.line.uptrend.xyaxis", value: .progress) {
                 NavigationStack {
                     HistoryRootView()
                 }
             }
 
-            Tab("Profile", systemImage: "person.crop.circle", value: .profile) {
+            Tab("You", systemImage: "person.crop.circle", value: .profile) {
                 NavigationStack {
                     ProfileView()
                 }
             }
         }
         .tint(SetraTheme.accent)
+        .toolbarBackground(SetraTheme.surface, for: .tabBar)
+        .toolbarBackground(.visible, for: .tabBar)
     }
 }
 
 enum AppTab: Hashable {
-    case home
+    case today
     case plan
-    case history
+    case progress
     case profile
 }

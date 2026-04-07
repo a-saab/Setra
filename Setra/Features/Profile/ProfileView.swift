@@ -1,50 +1,114 @@
 import SwiftUI
 
 struct ProfileView: View {
-    @EnvironmentObject private var workspaceStore: WorkspaceStore
-    @EnvironmentObject private var authController: AuthController
+    @Environment(WorkspaceStore.self) private var workspaceStore
+    @Environment(AuthController.self) private var authController
 
     var body: some View {
-        List {
-            Section {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 18) {
+                accountCard
+                preferencesCard
+                accountActionsCard
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 18)
+            .padding(.bottom, 20)
+        }
+        .scrollIndicators(.hidden)
+        .background(
+            SetraTheme.screenBackground
+                .overlay(SetraTheme.ambientGlow)
+                .ignoresSafeArea()
+        )
+        .navigationTitle("You")
+    }
+
+    private var accountCard: some View {
+        GlassCard {
+            HStack(spacing: 16) {
+                BrandMark(size: 68)
+
                 VStack(alignment: .leading, spacing: 6) {
                     Text(workspaceStore.workspace?.profile.displayName ?? "Setra Athlete")
                         .font(.title3.weight(.bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(SetraTheme.primaryText)
                     Text(workspaceStore.workspace?.profile.email ?? authController.currentUser?.email ?? "")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(SetraTheme.secondaryText)
+                    Text("The profile area should stay operational and low-noise so it never competes with training.")
+                        .font(.footnote)
+                        .foregroundStyle(SetraTheme.secondaryText)
                 }
-                .padding(.vertical, 4)
             }
+        }
+    }
 
-            Section("Preferences") {
-                NavigationLink("Settings") {
+    private var preferencesCard: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: 14) {
+                SectionHeader("Preferences", subtitle: "Keep utilities here, not in the middle of the workout flow")
+
+                NavigationLink {
                     SettingsView()
+                } label: {
+                    profileRow(title: "Settings", subtitle: "Units, week structure, progression, experience")
                 }
-                NavigationLink("Bodyweight Log") {
-                    BodyweightLogView()
-                }
-            }
+                .buttonStyle(.plain)
 
-            Section("Account") {
+                NavigationLink {
+                    BodyweightLogView()
+                } label: {
+                    profileRow(title: "Bodyweight", subtitle: "Track entries and keep trend context")
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var accountActionsCard: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: 14) {
+                SectionHeader("Account")
+
                 Button("Sign Out", role: .destructive) {
                     Task {
                         await authController.signOut()
                     }
                 }
+                .buttonStyle(SecondaryActionButtonStyle())
             }
         }
-        .listStyle(.insetGrouped)
-        .scrollContentBackground(.hidden)
-        .background(SetraTheme.screenBackground.ignoresSafeArea())
-        .navigationTitle("Profile")
+    }
+
+    private func profileRow(title: String, subtitle: String) -> some View {
+        HStack(spacing: 14) {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(SetraTheme.mutedFill)
+                .frame(width: 42, height: 42)
+                .overlay(
+                    Image(systemName: "chevron.right")
+                        .font(.footnote.weight(.bold))
+                        .foregroundStyle(SetraTheme.accent)
+                )
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(SetraTheme.primaryText)
+                Text(subtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(SetraTheme.secondaryText)
+            }
+
+            Spacer()
+        }
     }
 }
 
 private struct BodyweightLogView: View {
-    @EnvironmentObject private var workspaceStore: WorkspaceStore
-    @EnvironmentObject private var authController: AuthController
+    @Environment(WorkspaceStore.self) private var workspaceStore
+    @Environment(AuthController.self) private var authController
 
     @State private var value = ""
 
@@ -71,12 +135,21 @@ private struct BodyweightLogView: View {
                 }
             }
         }
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(SetraTheme.screenBackground.ignoresSafeArea())
         .navigationTitle("Bodyweight")
     }
 
     private func save() {
         guard let user = authController.currentUser, let weight = Double(value) else { return }
-        let log = BodyweightLog(id: UUID().uuidString, date: .now, weight: weight, unit: workspaceStore.workspace?.settings.weightUnit ?? .pounds, note: "")
+        let log = BodyweightLog(
+            id: UUID().uuidString,
+            date: .now,
+            weight: weight,
+            unit: workspaceStore.workspace?.settings.weightUnit ?? .pounds,
+            note: ""
+        )
         Task {
             await workspaceStore.addBodyweightLog(log, for: user)
             value = ""
@@ -85,8 +158,8 @@ private struct BodyweightLogView: View {
 }
 
 private struct SettingsView: View {
-    @EnvironmentObject private var workspaceStore: WorkspaceStore
-    @EnvironmentObject private var authController: AuthController
+    @Environment(WorkspaceStore.self) private var workspaceStore
+    @Environment(AuthController.self) private var authController
 
     @State private var settings = AppSettings.default
 
@@ -121,9 +194,7 @@ private struct SettingsView: View {
 
                 Picker("Preferred Input", selection: $settings.preferredBarbellEntryMode) {
                     ForEach(BarbellEntryMode.allCases) { mode in
-                        VStack(alignment: .leading) {
-                            Text(mode.title).tag(mode)
-                        }
+                        Text(mode.title).tag(mode)
                     }
                 }
 

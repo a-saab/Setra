@@ -2,8 +2,8 @@ import SwiftUI
 
 struct WorkoutSessionView: View {
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject private var workspaceStore: WorkspaceStore
-    @EnvironmentObject private var authController: AuthController
+    @Environment(WorkspaceStore.self) private var workspaceStore
+    @Environment(AuthController.self) private var authController
 
     @State var session: WorkoutSession
     @State private var selectedSet: SetSelection?

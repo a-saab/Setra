@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct DayDetailView: View {
-    @EnvironmentObject private var workspaceStore: WorkspaceStore
-    @EnvironmentObject private var authController: AuthController
+    @Environment(WorkspaceStore.self) private var workspaceStore
+    @Environment(AuthController.self) private var authController
 
     @State private var draft: ScheduleDayPlan
     @State private var isAddExercisePresented = false
