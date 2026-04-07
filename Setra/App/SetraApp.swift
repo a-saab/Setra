@@ -1,4 +1,7 @@
 import SwiftUI
+#if canImport(FirebaseCore)
+import FirebaseCore
+#endif
 
 @main
 struct SetraApp: App {
@@ -7,6 +10,13 @@ struct SetraApp: App {
     @StateObject private var workspaceStore: WorkspaceStore
 
     init() {
+#if canImport(FirebaseCore)
+        if FirebaseApp.app() == nil,
+           Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
+            FirebaseApp.configure()
+        }
+#endif
+
         let container = AppContainer.bootstrap()
         self.container = container
         _authController = StateObject(wrappedValue: container.authController)
