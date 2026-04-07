@@ -12,7 +12,7 @@ struct AuthenticationFlowView: View {
                         Text("Setra")
                             .font(.system(size: 40, weight: .bold, design: .rounded))
                             .foregroundStyle(.white)
-                        Text("A premium workout planner and logging system built for real sessions, not just pretty plans.")
+                        Text("A calm, serious training companion built to make the next rep feel obvious.")
                             .font(.title3)
                             .multilineTextAlignment(.center)
                             .foregroundStyle(.secondary)
@@ -53,7 +53,7 @@ struct AuthenticationFlowView: View {
                     }
                     .padding(.horizontal, 20)
 
-                    Text("Firebase auth activates automatically when `GoogleService-Info.plist` is present. Until then, local development auth keeps the app fully runnable.")
+                    Text("Setra is Firebase-first in production. When Firebase config is missing, local development mode keeps the app fully runnable while we build.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -78,7 +78,7 @@ private struct GoogleSignInButton: View {
                 _ = await authController.signInWithGoogle()
             }
         } label: {
-            Label("Continue With Google", systemImage: "g.circle.fill")
+            Label("Continue with Google", systemImage: "g.circle.fill")
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(SecondaryActionButtonStyle())
@@ -142,7 +142,7 @@ struct SignUpView: View {
     var body: some View {
         AuthScaffold(
             title: "Create Your Setra Account",
-            subtitle: "Use email, password, or add Google now and Apple later."
+            subtitle: "Start with email or Google. Keep the setup clean and friction-light."
         ) {
             TextField("Display Name", text: $displayName)
                 .authField()

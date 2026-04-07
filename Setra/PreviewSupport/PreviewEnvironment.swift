@@ -82,9 +82,23 @@ extension View {
     ) -> some View {
         let auth = PreviewEnvironment.authController(signedIn: signedIn)
         let workspace = PreviewEnvironment.workspaceStore(onboarded: onboarded)
+        let dashboard = DashboardStore(workspaceStore: workspace)
+        let planning = PlanningStore(workspaceStore: workspace, authController: auth)
+        let progress = ProgressStore(workspaceStore: workspace)
+        let profile = ProfileStore(workspaceStore: workspace, authController: auth)
+        let exerciseLibrary = ExerciseLibraryStore(workspaceStore: workspace, authController: auth)
+        let workout = WorkoutStore(workspaceStore: workspace, authController: auth)
+        let onboarding = OnboardingStore(workspaceStore: workspace, authController: auth)
 
         return self
             .environment(auth)
             .environment(workspace)
+            .environment(dashboard)
+            .environment(planning)
+            .environment(progress)
+            .environment(profile)
+            .environment(exerciseLibrary)
+            .environment(workout)
+            .environment(onboarding)
     }
 }

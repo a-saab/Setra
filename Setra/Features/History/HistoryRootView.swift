@@ -2,7 +2,7 @@ import Charts
 import SwiftUI
 
 struct HistoryRootView: View {
-    @Environment(WorkspaceStore.self) private var workspaceStore
+    @Environment(ProgressStore.self) private var progressStore
 
     var body: some View {
         ScrollView {
@@ -31,9 +31,9 @@ struct HistoryRootView: View {
                 SectionHeader("Progress Summary", subtitle: "History and analytics should feel like one coherent story")
 
                 HStack(spacing: 12) {
-                    StatChip(label: "Sessions", value: "\(workspaceStore.historySessions.count)")
-                    StatChip(label: "Records", value: "\(workspaceStore.analytics.recentPRs.count)", accent: SetraTheme.success)
-                    StatChip(label: "Streak", value: "\(workspaceStore.analytics.streakCount)d", accent: SetraTheme.accentSecondary)
+                    StatChip(label: "Sessions", value: "\(progressStore.historySessions.count)")
+                    StatChip(label: "Records", value: "\(progressStore.analytics.recentPRs.count)", accent: SetraTheme.success)
+                    StatChip(label: "Streak", value: "\(progressStore.analytics.streakCount)d", accent: SetraTheme.accentSecondary)
                 }
             }
         }
@@ -44,12 +44,12 @@ struct HistoryRootView: View {
             VStack(alignment: .leading, spacing: 16) {
                 SectionHeader("Volume Trend", subtitle: "Weekly work should be visible without opening a separate mode")
 
-                if workspaceStore.analytics.volumeByWeek.isEmpty {
+                if progressStore.analytics.volumeByWeek.isEmpty {
                     Text("Volume appears after completed workouts. The redesign goal is to make low-data states feel calm, not barren.")
                         .font(.footnote)
                         .foregroundStyle(SetraTheme.secondaryText)
                 } else {
-                    Chart(workspaceStore.analytics.volumeByWeek) { point in
+                    Chart(progressStore.analytics.volumeByWeek) { point in
                         BarMark(
                             x: .value("Week", point.label),
                             y: .value("Volume", point.value)
@@ -72,12 +72,12 @@ struct HistoryRootView: View {
             VStack(alignment: .leading, spacing: 14) {
                 SectionHeader("Recent Bests", subtitle: "The moments that create emotional payoff after training")
 
-                if workspaceStore.analytics.recentPRs.isEmpty {
+                if progressStore.analytics.recentPRs.isEmpty {
                     Text("No records yet. Your first sessions are still valuable because they define the baseline.")
                         .font(.footnote)
                         .foregroundStyle(SetraTheme.secondaryText)
                 } else {
-                    ForEach(workspaceStore.analytics.recentPRs.prefix(5)) { record in
+                    ForEach(progressStore.analytics.recentPRs.prefix(5)) { record in
                         HStack(spacing: 14) {
                             RoundedRectangle(cornerRadius: 14, style: .continuous)
                                 .fill(SetraTheme.mutedFill)
@@ -109,12 +109,12 @@ struct HistoryRootView: View {
             VStack(alignment: .leading, spacing: 14) {
                 SectionHeader("Recent Sessions", subtitle: "The latest training history should stay close to the summary")
 
-                if workspaceStore.historySessions.isEmpty {
+                if progressStore.historySessions.isEmpty {
                     Text("No workouts logged yet.")
                         .font(.footnote)
                         .foregroundStyle(SetraTheme.secondaryText)
                 } else {
-                    ForEach(workspaceStore.historySessions.prefix(8)) { session in
+                    ForEach(progressStore.historySessions.prefix(8)) { session in
                         NavigationLink {
                             WorkoutSummaryView(session: session)
                         } label: {
@@ -144,11 +144,13 @@ struct HistoryRootView: View {
     }
 
     private func exerciseName(for id: String) -> String {
-        workspaceStore.exercise(by: id)?.canonicalName ?? "Exercise"
+        progressStore.exercise(by: id)?.canonicalName ?? "Exercise"
     }
 }
 
 private struct WorkoutSummaryView: View {
+    @Environment(ProgressStore.self) private var progressStore
+
     let session: WorkoutSession
 
     var body: some View {
@@ -170,7 +172,7 @@ private struct WorkoutSummaryView: View {
     }
 
     private func workspaceExerciseName(_ id: String) -> String {
-        SeedData.exerciseLibrary.first(where: { $0.id == id })?.canonicalName ?? "Exercise"
+        progressStore.exercise(by: id)?.canonicalName ?? "Exercise"
     }
 }
 

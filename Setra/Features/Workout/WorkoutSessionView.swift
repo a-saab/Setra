@@ -2,8 +2,7 @@ import SwiftUI
 
 struct WorkoutSessionView: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(WorkspaceStore.self) private var workspaceStore
-    @Environment(AuthController.self) private var authController
+    @Environment(WorkoutStore.self) private var workoutStore
 
     @State var session: WorkoutSession
     @State private var selectedSet: SetSelection?
@@ -31,7 +30,7 @@ struct WorkoutSessionView: View {
                 }
 
                 ForEach($session.exercises) { $exercise in
-                    let currentExercise = workspaceStore.exercise(by: exercise.exerciseID)
+                    let currentExercise = workoutStore.exercise(by: exercise.exerciseID)
                     Section {
                         VStack(alignment: .leading, spacing: 14) {
                             Text(currentExercise?.canonicalName ?? "Exercise")
@@ -73,7 +72,7 @@ struct WorkoutSessionView: View {
                             Toggle("Last set to failure completed", isOn: $exercise.lastSetFailureCompleted)
 
                             Button("Start Rest Timer") {
-                                startRestTimer(duration: workspaceStore.workspace?.settings.restTimerSeconds ?? 120)
+                                startRestTimer(duration: workoutStore.settings.restTimerSeconds)
                             }
                             .buttonStyle(SecondaryActionButtonStyle())
                         }
@@ -95,10 +94,10 @@ struct WorkoutSessionView: View {
             }
             .sheet(item: $selectedSet) { selection in
                 WeightPickerSheet(
-                    exercise: workspaceStore.exercise(by: selection.exerciseID),
+                    exercise: workoutStore.exercise(by: selection.exerciseID),
                     unit: session.unit,
                     initialWeight: session.exercises[selection.exerciseIndex].workingSets[selection.setIndex].load,
-                    settings: workspaceStore.workspace?.settings ?? .default
+                    settings: workoutStore.settings
                 ) { newWeight in
                     session.exercises[selection.exerciseIndex].workingSets[selection.setIndex].load = newWeight
                 }
@@ -126,11 +125,10 @@ struct WorkoutSessionView: View {
     }
 
     private func finish() {
-        guard let user = authController.currentUser else { return }
         var completed = session
         completed.completedAt = .now
         Task {
-            await workspaceStore.saveCompletedWorkout(completed, for: user)
+            await workoutStore.saveCompletedWorkout(completed)
             dismiss()
         }
     }

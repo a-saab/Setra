@@ -35,8 +35,7 @@ The best part of the current product is simple: it helps a lifter walk into the 
 - The app has no sharp product opinion. It is a bundle of planner, logger, settings, and charts rather than a focused training companion.
 - The UI looks like a well-made concept app, not a high-retention shipped product.
 - `WorkspaceStore` is effectively the whole application state and mutation layer. It is too broad to scale safely.
-- Cloudflare is missing entirely even though the intended stack calls for it.
-- Firebase is used as a broad persistence bucket instead of a deliberately bounded platform role.
+- Firebase is doing too much implicitly and not enough deliberately. The issue is not that another backend is missing; it is that the current Firebase usage has not been shaped into a disciplined product backend.
 
 ### Product and UX problems
 
@@ -57,16 +56,15 @@ The best part of the current product is simple: it helps a lifter walk into the 
 
 ### Backend and data problems
 
-- There is no Cloudflare layer at all. The repo explicitly treats Cloudflare as a non-goal, which is the wrong architectural direction for the target stack.
+- There is no server-side API boundary, but that is acceptable for this stage of the product. The real issue is missing discipline around Firebase modeling, validation, analytics, and sync behavior.
 - Firestore rules are permissive at the ownership boundary but do not validate document shapes or write constraints.
 - All sync is essentially last-write-wins snapshot mirroring.
-- There is no API boundary for future capabilities such as entitlement checks, notification orchestration, remote config, recovery flows, ingestion, or abuse controls.
+- There is no clean path yet for future capabilities such as entitlements, notification orchestration, remote config, recovery flows, or abuse controls if the app outgrows direct client-to-Firebase patterns.
 
 ### Security and privacy concerns
 
-- No explicit token verification layer between client and edge because there is no edge layer.
 - No App Check strategy.
-- No rate limiting or abuse mitigation.
+- No server-side abuse or write-hardening strategy beyond Firestore ownership rules.
 - No observability pipeline for auth failures, sync issues, or degraded launch paths.
 
 ### App Store quality gaps
@@ -102,14 +100,13 @@ Delete:
 - the assumption that Firebase is the whole backend
 - generic “glass concept” styling used as the default visual language
 - the current broad store-as-app-architecture approach
-- v1-era roadmap assumptions that conflict with the intended stack
+- vague backend ambitions that add complexity without current product need
 
 Rebuild from zero:
 
 - app shell
 - feature architecture
 - design system
-- Cloudflare edge layer
 - observability model
 - release readiness pipeline
 
@@ -219,32 +216,30 @@ The app should feel calm, prepared, precise, and quietly motivating. It should f
 - reusable design system with semantic tokens and screen scaffolds
 - async workflows modeled explicitly, not hidden inside ad hoc tasks
 
-### Cloudflare
-
-Cloudflare becomes the app’s edge control plane.
-
-- API gateway and routing via Workers
-- Firebase token verification at the edge
-- write validation and normalization before durable persistence
-- rate limiting and abuse protection
-- remote config, entitlement checks, notification orchestration, and webhook ingestion live here
-- structured logging and edge observability live here
-
 ### Firebase
 
-Firebase stays important, but bounded.
+Firebase becomes the primary backend for v1, but with much stricter boundaries.
 
 - Auth: identity and client session bootstrap
 - Firestore: user-scoped durable data
 - Cloud Messaging: notifications when needed
 - Analytics: product telemetry, but only for defined events
+- App Check: protect production endpoints and reduce abuse
+- Remote Config: only if it serves a real product or rollout need
+
+### Optional server layer later
+
+Do not add a second backend just to look “architected.”
+
+- Start with direct client-to-Firebase flows for v1
+- Add a server layer later only if the product truly needs server-owned logic, webhook processing, entitlement verification, or cross-service orchestration
+- If that day comes, choose the smallest backend addition that solves the specific problem
 
 ### Data strategy
 
 - local-first cached workspace on device
-- edge-mediated sync contracts
 - Firestore remains source of durable user data
-- future path for conflict-aware merge, drafts, and multi-device recovery
+- future path for conflict-aware merge, drafts, multi-device recovery, and optional server-side workflows if needed
 
 ## Phase 5. Rebuild Plan
 
@@ -271,10 +266,10 @@ Firebase stays important, but bounded.
    - workout execution
    - progress
 5. Backend
-   - Cloudflare worker entrypoint
-   - auth verification
-   - config and sync contracts
-   - observability
+   - Firebase data contract cleanup
+   - Firestore rules hardening
+   - App Check strategy
+   - observability and analytics taxonomy
 6. Data layer
    - repository split
    - sync engine
@@ -302,3 +297,13 @@ The first implementation slice should:
 - replace the generic shell with a sharper today-first navigation structure
 - establish a more premium, restrained visual system
 - prepare the codebase for a deeper feature-by-feature rewrite
+
+## Stack Decision
+
+For the current remake, the stack is:
+
+- iOS frontend: Swift / SwiftUI
+- backend and persistence: Firebase-first
+- no Cloudflare in v1
+
+Add another backend only when the product has a concrete need for it.

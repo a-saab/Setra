@@ -2,7 +2,7 @@ import Charts
 import SwiftUI
 
 struct DashboardView: View {
-    @Environment(WorkspaceStore.self) private var workspaceStore
+    @Environment(DashboardStore.self) private var dashboardStore
 
     @State private var activeWorkout: WorkoutSession?
 
@@ -17,7 +17,7 @@ struct DashboardView: View {
                         summary: workoutSummary(for: plan),
                         previousSummary: primaryExercisePerformance(for: plan),
                         onStart: {
-                            activeWorkout = workspaceStore.startWorkout(from: plan)
+                            activeWorkout = dashboardStore.startWorkout(from: plan)
                         }
                     )
                 } else {
@@ -63,10 +63,10 @@ struct DashboardView: View {
                 HStack(spacing: 12) {
                     StatChip(label: "Planned", value: "\(plannedSessionsThisWeek)")
                     StatChip(label: "Done", value: "\(completedSessionsThisWeek)", accent: SetraTheme.success)
-                    StatChip(label: "Streak", value: "\(workspaceStore.analytics.streakCount)d", accent: SetraTheme.accentSecondary)
+                    StatChip(label: "Streak", value: "\(dashboardStore.analytics.streakCount)d", accent: SetraTheme.accentSecondary)
                 }
 
-                if let latestSession = workspaceStore.historySessions.first {
+                if let latestSession = dashboardStore.historySessions.first {
                     dashboardCallout(
                         title: "Last session",
                         subtitle: "\(latestSession.title) • \(latestSession.totalVolume.clean) total volume"
@@ -86,8 +86,8 @@ struct DashboardView: View {
             VStack(alignment: .leading, spacing: 16) {
                 SectionHeader("Momentum", subtitle: "Progress should feel visible, not buried")
 
-                if let recentPR = workspaceStore.analytics.recentPRs.first,
-                   let exercise = workspaceStore.exercise(by: recentPR.exerciseID) {
+                if let recentPR = dashboardStore.analytics.recentPRs.first,
+                   let exercise = dashboardStore.exercise(by: recentPR.exerciseID) {
                     dashboardCallout(
                         title: "Recent best",
                         subtitle: "\(exercise.canonicalName) • \(recentPR.label)"
@@ -99,8 +99,8 @@ struct DashboardView: View {
                     )
                 }
 
-                if workspaceStore.analytics.bodyweightTrend.count > 1 {
-                    Chart(workspaceStore.analytics.bodyweightTrend) { point in
+                if dashboardStore.analytics.bodyweightTrend.count > 1 {
+                    Chart(dashboardStore.analytics.bodyweightTrend) { point in
                         LineMark(
                             x: .value("Date", point.label),
                             y: .value("Weight", point.value)
@@ -214,21 +214,21 @@ struct DashboardView: View {
     }
 
     private var todayPlan: ScheduleDayPlan? {
-        workspaceStore.workspace?.schedule.day(for: .today)
+        dashboardStore.workspace?.schedule.day(for: .today)
     }
 
     private var plannedSessionsThisWeek: Int {
-        workspaceStore.workspace?.schedule.days.filter { $0.kind == .workout }.count ?? 0
+        dashboardStore.workspace?.schedule.days.filter { $0.kind == .workout }.count ?? 0
     }
 
     private var completedSessionsThisWeek: Int {
-        workspaceStore.historySessions.filter {
+        dashboardStore.historySessions.filter {
             Calendar.current.isDate($0.startedAt, equalTo: .now, toGranularity: .weekOfYear)
         }.count
     }
 
     private var upcomingDays: [ScheduleDayPlan] {
-        guard let workspace = workspaceStore.workspace else { return [] }
+        guard let workspace = dashboardStore.workspace else { return [] }
         let ordered = workspace.orderedScheduleDays
         guard let currentIndex = ordered.firstIndex(where: { $0.weekday == .today }) else {
             return Array(ordered.prefix(4))
@@ -238,7 +238,7 @@ struct DashboardView: View {
     }
 
     private var greetingLine: String {
-        if let name = workspaceStore.workspace?.profile.displayName.split(separator: " ").first {
+        if let name = dashboardStore.workspace?.profile.displayName.split(separator: " ").first {
             return "Ready, \(name)"
         }
         return "Ready when you are"
@@ -263,7 +263,7 @@ struct DashboardView: View {
 
     private func primaryExercisePerformance(for day: ScheduleDayPlan) -> ExercisePerformanceSummary? {
         guard let firstExerciseID = day.exercises.first?.exerciseID else { return nil }
-        return workspaceStore.performanceSummary(for: firstExerciseID)
+        return dashboardStore.performanceSummary(for: firstExerciseID)
     }
 }
 

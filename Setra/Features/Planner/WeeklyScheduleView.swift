@@ -1,14 +1,14 @@
 import SwiftUI
 
 struct WeeklyScheduleView: View {
-    @Environment(WorkspaceStore.self) private var workspaceStore
+    @Environment(PlanningStore.self) private var planningStore
 
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 18) {
                 overviewCard
 
-                ForEach(workspaceStore.workspace?.orderedScheduleDays ?? []) { day in
+                ForEach(planningStore.orderedScheduleDays) { day in
                     NavigationLink {
                         DayDetailView(day: day)
                     } label: {
@@ -17,8 +17,8 @@ struct WeeklyScheduleView: View {
                     .buttonStyle(.plain)
                 }
 
-                if let templates = workspaceStore.workspace?.templates, !templates.isEmpty {
-                    templatesCard(templates)
+                if !planningStore.templates.isEmpty {
+                    templatesCard(planningStore.templates)
                 }
             }
             .padding(.horizontal, 20)
@@ -84,15 +84,15 @@ struct WeeklyScheduleView: View {
     }
 
     private var trainingDayCount: Int {
-        workspaceStore.workspace?.schedule.days.filter { $0.kind == .workout }.count ?? 0
+        planningStore.workspace?.schedule.days.filter { $0.kind == .workout }.count ?? 0
     }
 
     private var restDayCount: Int {
-        workspaceStore.workspace?.schedule.days.filter { $0.kind == .rest }.count ?? 0
+        planningStore.workspace?.schedule.days.filter { $0.kind == .rest }.count ?? 0
     }
 
     private var templateCount: Int {
-        workspaceStore.workspace?.templates.count ?? 0
+        planningStore.templates.count
     }
 
     private func daySummary(for day: ScheduleDayPlan) -> String {

@@ -3,8 +3,7 @@ import SwiftUI
 
 struct CustomExerciseCreatorView: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(WorkspaceStore.self) private var workspaceStore
-    @Environment(AuthController.self) private var authController
+    @Environment(ExerciseLibraryStore.self) private var exerciseLibraryStore
 
     @State private var name = ""
     @State private var aliases = ""
@@ -98,7 +97,6 @@ struct CustomExerciseCreatorView: View {
     }
 
     private func save() {
-        guard let user = authController.currentUser else { return }
         let exercise = Exercise(
             id: UUID().uuidString,
             source: .custom,
@@ -122,7 +120,7 @@ struct CustomExerciseCreatorView: View {
         )
 
         Task {
-            await workspaceStore.saveCustomExercise(exercise, for: user)
+            await exerciseLibraryStore.saveCustomExercise(exercise)
             onSave(exercise)
             dismiss()
         }

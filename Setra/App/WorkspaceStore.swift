@@ -213,7 +213,8 @@ final class WorkspaceStore {
             exercises: allExercises,
             favorites: workspace?.favoriteExerciseIDs ?? [],
             recents: workspace?.recentExerciseIDs ?? [],
-            history: historySessions
+            history: historySessions,
+            settings: workspace?.settings ?? .default
         )
     }
 

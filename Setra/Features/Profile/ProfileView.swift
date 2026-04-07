@@ -1,8 +1,7 @@
 import SwiftUI
 
 struct ProfileView: View {
-    @Environment(WorkspaceStore.self) private var workspaceStore
-    @Environment(AuthController.self) private var authController
+    @Environment(ProfileStore.self) private var profileStore
 
     var body: some View {
         ScrollView {
@@ -30,10 +29,10 @@ struct ProfileView: View {
                 BrandMark(size: 68)
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(workspaceStore.workspace?.profile.displayName ?? "Setra Athlete")
+                    Text(profileStore.workspace?.profile.displayName ?? "Setra Athlete")
                         .font(.title3.weight(.bold))
                         .foregroundStyle(SetraTheme.primaryText)
-                    Text(workspaceStore.workspace?.profile.email ?? authController.currentUser?.email ?? "")
+                    Text(profileStore.workspace?.profile.email ?? profileStore.currentUser?.email ?? "")
                         .font(.subheadline)
                         .foregroundStyle(SetraTheme.secondaryText)
                     Text("The profile area should stay operational and low-noise so it never competes with training.")
@@ -73,7 +72,7 @@ struct ProfileView: View {
 
                 Button("Sign Out", role: .destructive) {
                     Task {
-                        await authController.signOut()
+                        await profileStore.signOut()
                     }
                 }
                 .buttonStyle(SecondaryActionButtonStyle())
@@ -107,8 +106,7 @@ struct ProfileView: View {
 }
 
 private struct BodyweightLogView: View {
-    @Environment(WorkspaceStore.self) private var workspaceStore
-    @Environment(AuthController.self) private var authController
+    @Environment(ProfileStore.self) private var profileStore
 
     @State private var value = ""
 
@@ -121,8 +119,8 @@ private struct BodyweightLogView: View {
             }
 
             Section("Recent Entries") {
-                if let logs = workspaceStore.workspace?.bodyweightLogs, !logs.isEmpty {
-                    ForEach(logs) { log in
+                if !profileStore.bodyweightLogs.isEmpty {
+                    ForEach(profileStore.bodyweightLogs) { log in
                         HStack {
                             Text(log.date.formatted(.dateTime.month().day()))
                             Spacer()
@@ -142,24 +140,23 @@ private struct BodyweightLogView: View {
     }
 
     private func save() {
-        guard let user = authController.currentUser, let weight = Double(value) else { return }
+        guard let weight = Double(value) else { return }
         let log = BodyweightLog(
             id: UUID().uuidString,
             date: .now,
             weight: weight,
-            unit: workspaceStore.workspace?.settings.weightUnit ?? .pounds,
+            unit: profileStore.settings.weightUnit,
             note: ""
         )
         Task {
-            await workspaceStore.addBodyweightLog(log, for: user)
+            await profileStore.addBodyweightLog(log)
             value = ""
         }
     }
 }
 
 private struct SettingsView: View {
-    @Environment(WorkspaceStore.self) private var workspaceStore
-    @Environment(AuthController.self) private var authController
+    @Environment(ProfileStore.self) private var profileStore
 
     @State private var settings = AppSettings.default
 
@@ -226,14 +223,13 @@ private struct SettingsView: View {
             }
         }
         .onAppear {
-            settings = workspaceStore.workspace?.settings ?? .default
+            settings = profileStore.settings
         }
     }
 
     private func save() {
-        guard let user = authController.currentUser else { return }
         Task {
-            await workspaceStore.updateSettings(settings, for: user)
+            await profileStore.updateSettings(settings)
         }
     }
 }

@@ -5,16 +5,16 @@
 - Fast over flashy
 - Clear over clever
 - Local-first for the workout flow
-- Firebase-ready without blocking local development
+- Firebase-first for v1 without blocking local development
 - Explicit models and repository seams over giant ad hoc state
 
 ## Layers
 
 ### App
 
-- `SetraApp.swift` wires the root store objects into SwiftUI.
+- `SetraApp.swift` wires observation-backed root state into SwiftUI.
 - `AuthController` owns sign-in state and delegates work to an auth provider.
-- `WorkspaceStore` owns in-memory workout data, schedule state, sessions, settings, and mutations.
+- `WorkspaceStore` still owns too much, but now serves as the transitional app store until feature-scoped stores replace it.
 
 ### Domain
 
@@ -51,7 +51,7 @@
 
 ### Remote
 
-- Firebase Auth and Firestore activate only when the required packages and config are installed.
+- Firebase Auth and Firestore are the primary backend in production and activate when the required packages and config are installed.
 - Firestore mirrors the same workspace data into structured user subcollections.
 - Local remains the primary store for the active session; remote sync is additive.
 
@@ -63,7 +63,6 @@
 
 ## Tradeoffs
 
-- `WorkspaceStore` is intentionally broad for v1, but domain logic is kept in separate services to avoid a full god object.
+- `WorkspaceStore` is still intentionally broad, but it is transitional and should be split by feature as the rewrite continues.
 - Firestore sync is snapshot-oriented rather than streaming listeners in v1 to keep the implementation transparent and dependable.
-- The app favors explicit fields and clean exports over aggressive backend abstraction.
-
+- The app favors explicit fields and clean exports over adding a second backend prematurely.

@@ -7,9 +7,11 @@ struct ExerciseSearchEngine {
         exercises: [Exercise],
         favorites: Set<String>,
         recents: [String],
-        history: [WorkoutSession]
+        history: [WorkoutSession],
+        settings: AppSettings
     ) -> [ExerciseSearchResult] {
         let normalizedQuery = normalize(query)
+        let progressionEngine = ProgressionEngine()
 
         let filtered = exercises.filter { exercise in
             let muscleMatch = filters.muscleGroup.map { exercise.primaryMuscle == $0 || exercise.secondaryMuscles.contains($0) } ?? true
@@ -26,14 +28,14 @@ struct ExerciseSearchEngine {
                 favorites: favorites,
                 recents: recents
             )
-            let summary = ProgressionEngine().lastPerformance(for: exercise.id, sessions: history)
+            let summary = progressionEngine.lastPerformance(for: exercise.id, sessions: history)
             let recommendation = summary.map { _ in
-                ProgressionEngine().recommendation(
+                progressionEngine.recommendation(
                     for: exercise.id,
                     plannedExercise: nil,
                     exercise: exercise,
                     sessions: history,
-                    settings: .default
+                    settings: settings
                 )
             } ?? nil
             return ExerciseSearchResult(

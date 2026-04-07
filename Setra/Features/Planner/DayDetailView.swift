@@ -1,15 +1,17 @@
 import SwiftUI
 
 struct DayDetailView: View {
-    @Environment(WorkspaceStore.self) private var workspaceStore
-    @Environment(AuthController.self) private var authController
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(PlanningStore.self) private var planningStore
 
     @State private var draft: ScheduleDayPlan
+    @State private var lastSavedDraft: ScheduleDayPlan
     @State private var isAddExercisePresented = false
     @State private var activeWorkout: WorkoutSession?
 
     init(day: ScheduleDayPlan) {
         _draft = State(initialValue: day)
+        _lastSavedDraft = State(initialValue: day)
     }
 
     var body: some View {
@@ -32,14 +34,14 @@ struct DayDetailView: View {
                 Section("Exercises") {
                     ForEach(draft.exercises) { planned in
                         NavigationLink {
-                            if let exercise = workspaceStore.exercise(by: planned.exerciseID) {
+                            if let exercise = planningStore.exercise(by: planned.exerciseID) {
                                 ExerciseDetailView(exercise: exercise)
                             }
                         } label: {
                             ExercisePlanRow(
                                 planned: planned,
-                                name: workspaceStore.exercise(by: planned.exerciseID)?.canonicalName ?? "Exercise",
-                                summary: workspaceStore.performanceSummary(for: planned.exerciseID)?.lastDescription
+                                name: planningStore.exercise(by: planned.exerciseID)?.canonicalName ?? "Exercise",
+                                summary: planningStore.performanceSummary(for: planned.exerciseID)?.lastDescription
                             )
                         }
                     }
@@ -85,7 +87,7 @@ struct DayDetailView: View {
             ToolbarItem(placement: .bottomBar) {
                 if draft.kind == .workout {
                     Button("Quick Start Workout") {
-                        activeWorkout = workspaceStore.startWorkout(from: draft)
+                        activeWorkout = planningStore.startWorkout(from: draft)
                     }
                 }
             }
@@ -96,7 +98,7 @@ struct DayDetailView: View {
                 draft.exercises.append(
                     PlannedExercise.from(
                         exercise: exercise,
-                        unit: workspaceStore.workspace?.settings.weightUnit ?? .pounds,
+                        unit: planningStore.weightUnit,
                         order: draft.exercises.count
                     )
                 )
@@ -105,49 +107,55 @@ struct DayDetailView: View {
         .sheet(item: $activeWorkout) { session in
             WorkoutSessionView(session: session)
         }
-        .onDisappear {
-            save()
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .background, hasUnsavedChanges {
+                save()
+            }
         }
     }
 
+    private var hasUnsavedChanges: Bool {
+        normalizedDraft != normalizedSavedDraft
+    }
+
+    private var normalizedDraft: ScheduleDayPlan {
+        normalized(day: draft)
+    }
+
+    private var normalizedSavedDraft: ScheduleDayPlan {
+        normalized(day: lastSavedDraft)
+    }
+
     private var copyTargets: [Weekday] {
-        let ordered = workspaceStore.workspace.map { workspace in
-            Weekday.ordered(startingAt: workspace.settings.firstWeekday)
-        } ?? Weekday.allCases
+        let ordered = Weekday.ordered(startingAt: planningStore.firstWeekday)
         return ordered.filter { $0 != draft.weekday }
     }
 
     private func save() {
-        guard let user = authController.currentUser else { return }
-        draft.exercises = draft.exercises.enumerated().map { index, exercise in
-            var copy = exercise
-            copy.order = index
-            return copy
-        }
+        let normalizedDraft = normalized(day: draft)
+        draft = normalizedDraft
+        lastSavedDraft = normalizedDraft
         Task {
-            await workspaceStore.updateScheduleDay(draft, for: user)
+            await planningStore.updateScheduleDay(normalizedDraft)
         }
     }
 
     private func saveTemplate() {
-        guard let user = authController.currentUser else { return }
         Task {
-            await workspaceStore.saveTemplate(from: draft, for: user)
+            await planningStore.saveTemplate(from: draft)
         }
     }
 
     private func copy(to weekday: Weekday) {
-        guard let user = authController.currentUser else { return }
         Task {
-            await workspaceStore.copyDay(from: draft.weekday, to: weekday, for: user)
+            await planningStore.copyDay(from: draft.weekday, to: weekday)
         }
     }
 
     private func clear() {
-        guard let user = authController.currentUser else { return }
         draft = ScheduleDayPlan.restDay(for: draft.weekday)
         Task {
-            await workspaceStore.clearDay(draft.weekday, for: user)
+            await planningStore.clearDay(draft.weekday)
         }
     }
 
@@ -157,6 +165,16 @@ struct DayDetailView: View {
 
     private func delete(at offsets: IndexSet) {
         draft.exercises.remove(atOffsets: offsets)
+    }
+
+    private func normalized(day: ScheduleDayPlan) -> ScheduleDayPlan {
+        var copy = day
+        copy.exercises = copy.exercises.enumerated().map { index, exercise in
+            var normalizedExercise = exercise
+            normalizedExercise.order = index
+            return normalizedExercise
+        }
+        return copy
     }
 }
 

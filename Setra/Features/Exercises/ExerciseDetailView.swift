@@ -1,8 +1,7 @@
 import SwiftUI
 
 struct ExerciseDetailView: View {
-    @Environment(WorkspaceStore.self) private var workspaceStore
-    @Environment(AuthController.self) private var authController
+    @Environment(ExerciseLibraryStore.self) private var exerciseLibraryStore
 
     let exercise: Exercise
 
@@ -39,7 +38,7 @@ struct ExerciseDetailView: View {
                     }
                 }
 
-                if let last = workspaceStore.performanceSummary(for: exercise.id) {
+                if let last = exerciseLibraryStore.performanceSummary(for: exercise.id) {
                     GlassCard {
                         VStack(alignment: .leading, spacing: 10) {
                             SectionHeader("Previous Performance")
@@ -49,7 +48,7 @@ struct ExerciseDetailView: View {
                             Text("Best: \(last.bestDescription)")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
-                            if let next = workspaceStore.progressionSuggestion(for: exercise.id) {
+                            if let next = exerciseLibraryStore.progressionSuggestion(for: exercise.id) {
                                 Text(next.reason)
                                     .font(.subheadline.weight(.semibold))
                                     .foregroundStyle(SetraTheme.success)
@@ -79,13 +78,12 @@ struct ExerciseDetailView: View {
     }
 
     private var isFavorite: Bool {
-        workspaceStore.workspace?.favoriteExerciseIDs.contains(exercise.id) ?? false
+        exerciseLibraryStore.isFavorite(exercise.id)
     }
 
     private func toggleFavorite() {
-        guard let user = authController.currentUser else { return }
         Task {
-            await workspaceStore.toggleFavorite(exerciseID: exercise.id, for: user)
+            await exerciseLibraryStore.toggleFavorite(exerciseID: exercise.id)
         }
     }
 }

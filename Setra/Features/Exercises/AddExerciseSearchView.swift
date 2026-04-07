@@ -2,7 +2,7 @@ import SwiftUI
 
 struct AddExerciseSearchView: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(WorkspaceStore.self) private var workspaceStore
+    @Environment(ExerciseLibraryStore.self) private var exerciseLibraryStore
 
     @State private var query = ""
     @State private var filters = ExerciseSearchFilters()
@@ -75,7 +75,7 @@ struct AddExerciseSearchView: View {
     }
 
     private var results: [ExerciseSearchResult] {
-        workspaceStore.searchExercises(query: query, filters: filters)
+        exerciseLibraryStore.searchExercises(query: query, filters: filters)
     }
 }
 

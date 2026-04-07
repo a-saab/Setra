@@ -3,7 +3,7 @@ import SwiftUI
 struct OnboardingFlowView: View {
     let user: AuthUser
 
-    @Environment(WorkspaceStore.self) private var workspaceStore
+    @Environment(OnboardingStore.self) private var onboardingStore
 
     @State private var displayName: String
     @State private var settings = AppSettings.default
@@ -125,16 +125,16 @@ struct OnboardingFlowView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(settings.preferredBarbellEntryMode.subtitle)
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(SetraTheme.primaryText)
                     Text(exampleEntryCopy)
                         .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(SetraTheme.secondaryText)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(14)
                 .background(
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(Color.white.opacity(0.06))
+                        .fill(SetraTheme.mutedFill)
                 )
             }
         }
@@ -162,12 +162,12 @@ struct OnboardingFlowView: View {
     private var actionCard: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 14) {
-                Text("Testing")
+                Text("You can change all of this later.")
                     .font(.headline.weight(.semibold))
-                    .foregroundStyle(.white)
-                Text("Launch with the environment variable `SETRA_FORCE_ONBOARDING=1` or the argument `-force-onboarding` to always show onboarding during testing.")
+                    .foregroundStyle(SetraTheme.primaryText)
+                Text("The goal is to make your first real workout feel fast, clear, and already tuned to your training setup.")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(SetraTheme.secondaryText)
 
                 Button(action: finishOnboarding) {
                     Text(isSaving ? "Saving..." : "Enter Setra")
@@ -195,8 +195,7 @@ struct OnboardingFlowView: View {
         Task {
             isSaving = true
             settings.trainingGoals = selectedGoals.isEmpty ? [.hypertrophy] : Array(selectedGoals)
-            await workspaceStore.completeOnboarding(
-                for: user,
+            await onboardingStore.completeOnboarding(
                 settings: settings,
                 displayName: displayName.isEmpty ? user.displayName : displayName
             )
@@ -220,18 +219,18 @@ private struct FlexibleTagSelector<Option: Identifiable & Hashable>: View {
                         .padding(.vertical, 10)
                         .background(
                             Capsule()
-                                .fill(selected.contains(option) ? SetraTheme.accent.opacity(0.22) : Color.white.opacity(0.06))
+                                .fill(selected.contains(option) ? SetraTheme.accent.opacity(0.22) : SetraTheme.mutedFill)
                         )
                         .overlay(
                             Capsule()
-                                .strokeBorder(selected.contains(option) ? SetraTheme.accent.opacity(0.45) : Color.white.opacity(0.08), lineWidth: 1)
+                                .strokeBorder(selected.contains(option) ? SetraTheme.accent.opacity(0.45) : SetraTheme.panelBorder, lineWidth: 1)
                         )
                 }
                 .buttonStyle(.plain)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .foregroundStyle(.white)
+        .foregroundStyle(SetraTheme.primaryText)
     }
 
     private func toggle(_ option: Option) {

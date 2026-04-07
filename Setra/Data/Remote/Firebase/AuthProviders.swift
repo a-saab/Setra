@@ -1,5 +1,9 @@
 import Foundation
 
+private extension Notification.Name {
+    static let localAuthStateDidChange = Notification.Name("setra.local-auth-state-did-change")
+}
+
 protocol AuthProviding {
     var currentUser: AuthUser? { get }
     func authStateChanges() -> AsyncStream<AuthUser?>
@@ -49,7 +53,17 @@ final class LocalAuthProvider: AuthProviding {
     func authStateChanges() -> AsyncStream<AuthUser?> {
         AsyncStream { continuation in
             continuation.yield(currentUser)
-            continuation.onTermination = { _ in }
+            let observer = NotificationCenter.default.addObserver(
+                forName: .localAuthStateDidChange,
+                object: nil,
+                queue: .main
+            ) { _ in
+                continuation.yield(self.currentUser)
+            }
+
+            continuation.onTermination = { _ in
+                NotificationCenter.default.removeObserver(observer)
+            }
         }
     }
 
@@ -59,6 +73,7 @@ final class LocalAuthProvider: AuthProviding {
         users[id] = PersistedAuthUser(email: email, password: password, displayName: displayName)
         saveUsers(users)
         UserDefaults.standard.set(id, forKey: currentUserKey)
+        notifyAuthStateChanged()
         return AuthUser(id: id, email: email, displayName: displayName, usesFirebase: false)
     }
 
@@ -69,6 +84,7 @@ final class LocalAuthProvider: AuthProviding {
             throw AuthProviderError.invalidCredentials
         }
         UserDefaults.standard.set(id, forKey: currentUserKey)
+        notifyAuthStateChanged()
         return AuthUser(id: id, email: user.email, displayName: user.displayName, usesFirebase: false)
     }
 
@@ -85,6 +101,7 @@ final class LocalAuthProvider: AuthProviding {
 
     func signOut() async throws {
         UserDefaults.standard.removeObject(forKey: currentUserKey)
+        notifyAuthStateChanged()
     }
 
     private func loadUsers() -> [String: PersistedAuthUser] {
@@ -101,6 +118,10 @@ final class LocalAuthProvider: AuthProviding {
         if let data = try? JSONEncoder().encode(users) {
             UserDefaults.standard.set(data, forKey: defaultsKey)
         }
+    }
+
+    private func notifyAuthStateChanged() {
+        NotificationCenter.default.post(name: .localAuthStateDidChange, object: nil)
     }
 }
 
